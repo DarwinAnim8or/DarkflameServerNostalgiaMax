@@ -178,10 +178,9 @@ std::string Zone::GetFilePathForZoneID() {
 	return std::string("ERR");
 }
 
-//Based off code from: https://www.liquisearch.com/fletchers_checksum/implementation/optimizations
 uint32_t Zone::CalculateChecksum() {
-	//glorious alpha need not this
-	return m_ZoneRevision;
+	//alpha seems to use the global scene's revision number
+	return m_Scenes.at(0).level->m_ChunkHeaders.begin()->second.fileInfo->revision;
 }
 
 void Zone::LoadLevelsIntoMemory() {

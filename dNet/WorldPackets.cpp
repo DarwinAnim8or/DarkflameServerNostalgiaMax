@@ -131,14 +131,14 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_CREATE_CHARACTER);
     
     RakNet::BitStream data;
-    data.Write<uint32_t>(8); //LDF key count
+    data.Write<uint32_t>(7); //LDF key count
 
     LDFData<LWOOBJID>* objid = new LDFData<LWOOBJID>(u"objid", objectID);
     LDFData<LOT>* lot = new LDFData<LOT>(u"template", 1);
     LDFData<std::string> * xmlConfigData = new LDFData<std::string>(u"xmlData", xmlData);
     LDFData<std::u16string>* name = new LDFData<std::u16string>(u"name", username);
     LDFData<int32_t>* gmlevel = new LDFData<int32_t>(u"gmlevel", gm);
-    LDFData<int32_t>* chatmode = new LDFData<int32_t>(u"chatmode", gm);
+    //LDFData<int32_t>* chatmode = new LDFData<int32_t>(u"chatmode", gm);
     LDFData<bool>* editor_enabled = new LDFData<bool>(u"editor_enabled", true);
     LDFData<int32_t>* editor_level = new LDFData<int32_t>(u"editor_level", 9);
     
@@ -146,7 +146,7 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     lot->WriteToPacket(&data);
     name->WriteToPacket(&data);
     gmlevel->WriteToPacket(&data);
-    chatmode->WriteToPacket(&data);
+    //chatmode->WriteToPacket(&data);
     editor_enabled->WriteToPacket(&data);
     editor_level->WriteToPacket(&data);
     xmlConfigData->WriteToPacket(&data);
@@ -155,7 +155,7 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     delete lot;
     delete xmlConfigData;
     delete gmlevel;
-    delete chatmode;
+    //delete chatmode;
     delete name;
     delete editor_level;
     delete editor_enabled;
