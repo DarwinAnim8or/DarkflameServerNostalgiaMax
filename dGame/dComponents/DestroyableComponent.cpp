@@ -379,7 +379,8 @@ void DestroyableComponent::AddFaction(const int32_t factionID, const bool ignore
 
 	std::stringstream query;
 
-	query << "SELECT enemyList FROM Factions WHERE faction = " << std::to_string(factionID);
+	//alpha appears to just use the factionList with a toggle for if it's list is friendly or not
+	query << "SELECT factionList FROM Factions WHERE factionListFriendly = 0 AND faction = " << std::to_string(factionID);
 
 	auto result = CDClientDatabase::ExecuteQuery(query.str());
 

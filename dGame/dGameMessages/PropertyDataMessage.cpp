@@ -93,11 +93,18 @@ void GameMessages::PropertyDataMessage::Serialize(RakNet::BitStream& stream) con
 }
 
 GameMessages::PropertyDataMessage::PropertyDataMessage(uint32_t mapID) {
-    const auto propertyTemplate = CDClientManager::Instance()->
-            GetTable<CDPropertyTemplateTable>("PropertyTemplate")->GetByMapID(mapID);
+    //const auto propertyTemplate = CDClientManager::Instance()->GetTable<CDPropertyTemplateTable>("PropertyTemplate")->GetName(mapID);
 
-    TemplateID = propertyTemplate.id;
-    ZoneId = propertyTemplate.mapID;
-    VendorMapId = propertyTemplate.vendorMapID;
-    SpawnName = propertyTemplate.spawnName;
+	auto entries = CDClientManager::Instance()->GetTable<CDPropertyTemplateTable>("PropertyTemplate")->GetEntries();
+
+	for (auto en : entries) {
+		if (en.mapID != mapID) continue;
+
+		TemplateID = en.id;
+		ZoneId = en.mapID;
+		VendorMapId = en.vendorMapID;
+		SpawnName = en.spawnName;
+
+		break;
+	}
 }

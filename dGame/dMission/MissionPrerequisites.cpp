@@ -148,10 +148,10 @@ bool MissionPrerequisites::CanAccept(const uint32_t missionId, const std::unorde
 
             // Checked by client
 			const time_t time = std::time(nullptr);
-			const time_t lock = mission->GetTimestamp() + info.cooldownTime * 60;
+			const time_t lock = mission->GetTimestamp() + info.time_limit * 60; //changed from cooldowntime, bc alpha
 
             // If there's no time limit, just check the prerequisites, otherwise make sure both conditions are met
-			return (info.cooldownTime == -1 ? prerequisitesMet : (lock - time < 0)) && prerequisitesMet;
+			return (info.time_limit == -1 ? prerequisitesMet : (lock - time < 0)) && prerequisitesMet;
 		}
 
         // Mission is already accepted and cannot be repeatedly accepted
@@ -176,10 +176,16 @@ bool MissionPrerequisites::CheckPrerequisites(uint32_t missionId, const std::uno
     if (missionEntries.empty())
         return false;
 
-    auto* expression = new PrerequisiteExpression(missionEntries[0].prereqMissionID);
+	//Because this is alpha, we only need to check 1 mission
+	//if (missionEntries[0].requirement_mission)
+
+	//actually i don't give a fuck; if the UI lets you accept the mission, do it. What is security even?
+	return true;
+
+    /*auto* expression = new PrerequisiteExpression(missionEntries[0].prereqMissionID);
     expressions.insert_or_assign(missionId, expression);
 
-    return expression->Execute(missions);
+    return expression->Execute(missions);*/
 }
 
 std::unordered_map<uint32_t, PrerequisiteExpression*> MissionPrerequisites::expressions = {};

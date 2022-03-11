@@ -27,7 +27,7 @@ VendorComponent::VendorComponent(Entity* parent) : Component(parent) {
         std::vector<CDLootTable> vendorItems = lootTableTable->Query([=](CDLootTable entry) { return (entry.LootTableIndex == lootTableID); });
         if (lootMatrix.maxToDrop == 0 || lootMatrix.minToDrop == 0) {
             for (CDLootTable item : vendorItems) {
-                m_Inventory.insert({item.itemid, item.sortPriority});
+                m_Inventory.insert({item.itemid, 0});
             }
         } else {
             auto randomCount = GeneralUtils::GenerateRandomNumber<int32_t>(lootMatrix.minToDrop, lootMatrix.maxToDrop);
@@ -43,7 +43,7 @@ VendorComponent::VendorComponent(Entity* parent) : Component(parent) {
 
                 vendorItems.erase(vendorItems.begin() + randomItemIndex);
 
-                m_Inventory.insert({randomItem.itemid, randomItem.sortPriority});
+                m_Inventory.insert({randomItem.itemid, 0});
             }
         }
     }

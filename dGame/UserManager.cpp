@@ -31,38 +31,8 @@ inline void StripCR(std::string& str) {
 }
 
 void UserManager::Initialize() {
-	std::string firstNamePath = "./res/names/minifigname_first.txt";
-	std::string middleNamePath = "./res/names/minifigname_middle.txt";
-	std::string lastNamePath = "./res/names/minifigname_last.txt";
-	std::string line;
-
-	std::fstream fnFile(firstNamePath, std::ios::in);
-	std::fstream mnFile(middleNamePath, std::ios::in);
-	std::fstream lnFile(lastNamePath, std::ios::in);
-
-	while (std::getline(fnFile, line, '\n')) {
-		std::string name = line;
-		StripCR(name);
-		m_FirstNames.push_back(name);
-	}
-
-	while (std::getline(mnFile, line, '\n')) {
-		std::string name = line;
-		StripCR(name);
-		m_MiddleNames.push_back(name);
-	}
-
-	while (std::getline(lnFile, line, '\n')) {
-		std::string name = line;
-		StripCR(name);
-		m_LastNames.push_back(name);
-	}
-
-	fnFile.close();
-	mnFile.close();
-	lnFile.close();
-	
 	//Load our pre-approved names:
+	std::string line;
 	std::fstream chatList("./res/chatplus_en_us.txt", std::ios::in);
 	while (std::getline(chatList, line, '\n')) {
 		StripCR(line);
@@ -168,18 +138,6 @@ bool UserManager::IsNamePreapproved ( const std::string& requestedName ) {
 		if (s == requestedName) return true;
 	}
 	
-	for (std::string& s : m_FirstNames) {
-		if (s == requestedName) return true;
-	}
-	
-	for (std::string& s : m_MiddleNames) {
-		if (s == requestedName) return true;
-	}
-	
-	for (std::string& s : m_LastNames) {
-		if (s == requestedName) return true;
-	}
-	
 	return false;
 }
 
@@ -240,32 +198,33 @@ void UserManager::CreateCharacter(const SystemAddress& sysAddr, Packet* packet) 
     
     std::string name = PacketUtils::ReadString(8, packet, true);
 
-    uint32_t firstNameIndex = PacketUtils::ReadPacketU32(74, packet);
-    uint32_t middleNameIndex = PacketUtils::ReadPacketU32(78, packet);
-    uint32_t lastNameIndex = PacketUtils::ReadPacketU32(82, packet);
-    std::string predefinedName = GetPredefinedName(firstNameIndex, middleNameIndex, lastNameIndex);
-    Game::logger->Log("UserManager", "Got predefined name: %s\n", predefinedName.c_str());
-
-    uint32_t shirtColor = PacketUtils::ReadPacketU32(95, packet);
-    uint32_t shirtStyle = PacketUtils::ReadPacketU32(99, packet);
-    uint32_t pantsColor = PacketUtils::ReadPacketU32(103, packet);
-    uint32_t hairStyle = PacketUtils::ReadPacketU32(107, packet);
-    uint32_t hairColor = PacketUtils::ReadPacketU32(111, packet);
-    uint32_t lh = PacketUtils::ReadPacketU32(115, packet);
-    uint32_t rh = PacketUtils::ReadPacketU32(119, packet);
-    uint32_t eyebrows = PacketUtils::ReadPacketU32(123, packet);
-    uint32_t eyes = PacketUtils::ReadPacketU32(127, packet);
-    uint32_t mouth = PacketUtils::ReadPacketU32(131, packet);
+    uint32_t shirtColor = PacketUtils::ReadPacketU32(0x52, packet);
+    uint32_t shirtStyle = PacketUtils::ReadPacketU32(0x56, packet);
+    uint32_t pantsColor = PacketUtils::ReadPacketU32(0x5A, packet);
+    uint32_t hairStyle = PacketUtils::ReadPacketU32(0x5E, packet);
+    uint32_t hairColor = PacketUtils::ReadPacketU32(0x62, packet);
+    uint32_t lh = PacketUtils::ReadPacketU32(0x66, packet);
+    uint32_t rh = PacketUtils::ReadPacketU32(0x6A, packet);
+    uint32_t eyebrows = PacketUtils::ReadPacketU32(0x6E, packet);
+    uint32_t eyes = PacketUtils::ReadPacketU32(0x72, packet);
+    uint32_t mouth = PacketUtils::ReadPacketU32(0x76, packet);
     
     LOT shirtLOT = FindCharShirtID(shirtColor, shirtStyle);
 	LOT pantsLOT = FindCharPantsID(pantsColor);
+
+	//generate a random minifig name:
+	//Minifig names in alpha were basically "Minifig1664233633" etc. (which is conviently the size of a Unix Timestamp)
+	std::time_t result = std::time(nullptr);
+	std::asctime(std::localtime(&result));
+	std::string sMinifigTempName = "Minifig" + std::to_string(result);
+	std::cout << "Randomly generated minifig temp name: " << sMinifigTempName << std::endl;
     
     if (name != "" && !UserManager::IsNameAvailable(name)) {
         WorldPackets::SendCharacterCreationResponse(sysAddr, CREATION_RESPONSE_CUSTOM_NAME_IN_USE);
         return;
     }
     
-    if (!IsNameAvailable(predefinedName)) {
+    if (!IsNameAvailable(sMinifigTempName)) {
         WorldPackets::SendCharacterCreationResponse(sysAddr, CREATION_RESPONSE_PREDEFINED_NAME_IN_USE);
         return;
     }
@@ -321,41 +280,30 @@ void UserManager::CreateCharacter(const SystemAddress& sysAddr, Packet* packet) 
                 bool nameOk = IsNamePreapproved(name);
                 if (!nameOk && u->GetMaxGMLevel() > 1) nameOk = true;
                 
-                if (name != "") {
-                    sql::PreparedStatement* stmt = Database::CreatePreppedStmt("INSERT INTO `charinfo`(`id`, `account_id`, `name`, `pending_name`, `needs_rename`, `last_login`) VALUES (?,?,?,?,?,?)");
-                    stmt->setUInt(1, objectID);
-                    stmt->setUInt(2, u->GetAccountID());
-                    stmt->setString(3, predefinedName.c_str());
-                    stmt->setString(4, name.c_str());
-                    stmt->setBoolean(5, false);
-                    stmt->setUInt64(6, time(NULL));
-                    
-                    if (nameOk) {
-                        stmt->setString(3, name.c_str());
-                        stmt->setString(4, "");
-                    }
-                    
-                    stmt->execute();
-                    delete stmt;
-                } else {
-                    sql::PreparedStatement* stmt = Database::CreatePreppedStmt("INSERT INTO `charinfo`(`id`, `account_id`, `name`, `pending_name`, `needs_rename`, `last_login`) VALUES (?,?,?,?,?,?)");
-                    stmt->setUInt(1, objectID);
-                    stmt->setUInt(2, u->GetAccountID());
-                    stmt->setString(3, predefinedName.c_str());
-                    stmt->setString(4, "");
-                    stmt->setBoolean(5, false);
-                    stmt->setUInt64(6, time(NULL));
-                    
-                    stmt->execute();
-                    delete stmt;
-                }
-                
-                //Now finally insert our character xml:
-                sql::PreparedStatement* stmt = Database::CreatePreppedStmt("INSERT INTO `charxml`(`id`, `xml_data`) VALUES (?,?)");
+                sql::PreparedStatement* stmt = Database::CreatePreppedStmt("INSERT INTO `charinfo`(`id`, `account_id`, `name`, `pending_name`, `needs_rename`, `last_login`) VALUES (?,?,?,?,?,?)");
                 stmt->setUInt(1, objectID);
-                stmt->setString(2, xml3.str().c_str());
+                stmt->setUInt(2, u->GetAccountID());
+                stmt->setString(3, sMinifigTempName.c_str());
+                stmt->setString(4, name.c_str());
+                stmt->setBoolean(5, false);
+                stmt->setUInt64(6, time(NULL));
+                    
+                if (nameOk) {
+                    stmt->setString(3, name.c_str());
+                    stmt->setString(4, "");
+                }
+                    
                 stmt->execute();
                 delete stmt;
+                
+                //Now finally insert our character xml:
+				{
+					sql::PreparedStatement* stmt = Database::CreatePreppedStmt("INSERT INTO `charxml`(`id`, `xml_data`) VALUES (?,?)");
+					stmt->setUInt(1, objectID);
+					stmt->setString(2, xml3.str().c_str());
+					stmt->execute();
+					delete stmt;
+				}
                 
                 WorldPackets::SendCharacterCreationResponse(sysAddr, CREATION_RESPONSE_SUCCESS);
                 UserManager::RequestCharacterList(sysAddr);

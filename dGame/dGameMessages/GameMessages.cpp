@@ -36,7 +36,7 @@
 
 //CDB includes:
 #include "CDClientManager.h"
-#include "CDEmoteTable.h"
+#include "CDEmotesTable.h"
 
 //Component includes:
 #include "ControllablePhysicsComponent.h"
@@ -4614,60 +4614,6 @@ void GameMessages::HandleBuyFromVendor(RakNet::BitStream* inStream, Entity* enti
 	Character* character = player->GetCharacter();
 	if (!character) return;
 
-    // Extra currency that needs to be deducted in case of crafting
-    auto craftingCurrencies = CDItemComponentTable::ParseCraftingCurrencies(itemComp);
-    for (const auto& craftingCurrency : craftingCurrencies) {
-        inv->RemoveItem(craftingCurrency.first, craftingCurrency.second * count);
-    }
-
-	if (isCommendationVendor)
-	{
-		if (itemComp.commendationLOT != 13763)
-		{
-			return;
-		}
-
-		auto* missionComponent = player->GetComponent<MissionComponent>();
-
-		if (missionComponent == nullptr)
-		{
-			return;
-		}
-
-		LOT tokenId = -1;
-
-		if (missionComponent->GetMissionState(545) == MissionState::MISSION_STATE_COMPLETE) // "Join Assembly!"
-		{
-			tokenId = 8318; // "Assembly Token"
-		}
-
-		if (missionComponent->GetMissionState(556) == MissionState::MISSION_STATE_COMPLETE) // "Join Venture League!"
-		{
-			tokenId = 8321; // "Venture League Token"
-		}
-
-		if (missionComponent->GetMissionState(567) == MissionState::MISSION_STATE_COMPLETE) // "Join The Sentinels!"
-		{
-			tokenId = 8319; // "Sentinels Token"
-		}
-
-		if (missionComponent->GetMissionState(578) == MissionState::MISSION_STATE_COMPLETE) // "Join Paradox!"
-		{
-			tokenId = 8320; // "Paradox Token"
-		}
-
-		const uint32_t altCurrencyCost = itemComp.commendationCost * count;
-
-		if (inv->GetLotCount(tokenId) < altCurrencyCost)
-		{
-			return;
-		}
-
-		inv->RemoveItem(tokenId, altCurrencyCost);
-
-		inv->AddItem(item, count);
-	}
-	else
 	{
 		float buyScalar = vend->GetBuyScalar();
 
@@ -5038,11 +4984,12 @@ void GameMessages::HandlePlayEmote(RakNet::BitStream* inStream, Entity* entity) 
 		}
 	}
 
-	CDEmoteTableTable* emotes = CDClientManager::Instance()->GetTable<CDEmoteTableTable>("EmoteTable");
+	//todo: fix this
+	/*CDEmotesTable* emotes = CDClientManager::Instance()->GetTable<CDEmoteTableTable>("EmoteTable");
 	if (emotes) {
-		CDEmoteTable* emote = emotes->GetEmote(emoteID);
+		CDEmotesTable* emote = emotes->GetName(emoteID);
 		if (emote) sAnimationName = emote->animationName;
-	}
+	}*/
 
 	GameMessages::SendPlayAnimation(entity, GeneralUtils::ASCIIToUTF16(sAnimationName));
 }

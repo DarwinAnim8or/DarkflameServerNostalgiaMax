@@ -1,4 +1,4 @@
-﻿#include <CDPropertyEntranceComponentTable.h>
+﻿//#include <CDPropertyEntranceComponentTable.h>
 #include "PropertyEntranceComponent.h"
 #include "PropertySelectQueryProperty.h"
 #include "RocketLaunchpadControlComponent.h"
@@ -12,11 +12,15 @@ PropertyEntranceComponent::PropertyEntranceComponent(uint32_t componentID, Entit
 {
     this->propertyQueries = {};
 
-    auto table = CDClientManager::Instance()->GetTable<CDPropertyEntranceComponentTable>("PropertyEntranceComponent");
-    const auto& entry = table->GetByID(componentID);
+    //auto table = CDClientManager::Instance()->GetTable<CDPropertyEntranceComponentTable>("PropertyEntranceComponent");
+    //const auto& entry = table->GetByID(componentID);
 
-    this->m_MapID = entry.mapID;
-    this->m_PropertyName = entry.propertyName;
+    //this->m_MapID = entry.mapID;
+    //this->m_PropertyName = entry.propertyName;
+
+    //temporary data:
+    m_MapID = 1150;
+    m_PropertyName = "Block Yard";
 }
 
 void PropertyEntranceComponent::OnUse(Entity* entity)

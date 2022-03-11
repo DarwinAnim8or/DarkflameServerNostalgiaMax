@@ -151,10 +151,10 @@ PhantomPhysicsComponent::PhantomPhysicsComponent(Entity* parent) : Component(par
 		if (physComp == nullptr) return;
 
 		auto* info = physComp->GetByID(componentID);
-		if (info == nullptr || info->physicsAsset == "" || info->physicsAsset == "NO_PHYSICS") return;
+		if (info == nullptr || info->physics_asset == "" || info->physics_asset == "NO_PHYSICS") return;
 
 		//temp test
-		if (info->physicsAsset == "miscellaneous\\misc_phys_10x1x5.hkx") {
+		if (info->physics_asset == "miscellaneous\\misc_phys_10x1x5.hkx") {
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 10.0f, 5.0f, 1.0f);
 
 			m_dpEntity->SetScale(m_Scale);
@@ -163,7 +163,7 @@ PhantomPhysicsComponent::PhantomPhysicsComponent(Entity* parent) : Component(par
 
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "miscellaneous\\misc_phys_640x640.hkx") {
+		else if (info->physics_asset == "miscellaneous\\misc_phys_640x640.hkx") {
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 640.0f, 20.0f, 640.0f);
 
 			m_dpEntity->SetScale(m_Scale);
@@ -172,28 +172,28 @@ PhantomPhysicsComponent::PhantomPhysicsComponent(Entity* parent) : Component(par
 
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "env\\trigger_wall_tall.hkx") {
+		else if (info->physics_asset == "env\\trigger_wall_tall.hkx") {
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 10.0f,  25.0f, 1.0f);
 			m_dpEntity->SetScale(m_Scale);
 			m_dpEntity->SetRotation(m_Rotation);
 			m_dpEntity->SetPosition(m_Position);
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "env\\env_gen_placeholderphysics.hkx") {
+		else if (info->physics_asset == "env\\env_gen_placeholderphysics.hkx") {
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 20.0f, 20.0f, 20.0f);
 			m_dpEntity->SetScale(m_Scale);
 			m_dpEntity->SetRotation(m_Rotation);
 			m_dpEntity->SetPosition(m_Position);
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "env\\POI_trigger_wall.hkx") {
+		else if (info->physics_asset == "env\\POI_trigger_wall.hkx") {
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 1.0f, 12.5f, 20.0f); // Not sure what the real size is
 			m_dpEntity->SetScale(m_Scale);
 			m_dpEntity->SetRotation(m_Rotation);
 			m_dpEntity->SetPosition(m_Position);
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "env\\NG_NinjaGo\\env_ng_gen_gate_chamber_puzzle_ceiling_tile_falling_phantom.hkx")
+		else if (info->physics_asset == "env\\NG_NinjaGo\\env_ng_gen_gate_chamber_puzzle_ceiling_tile_falling_phantom.hkx")
 		{
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 18.0f, 5.0f, 15.0f);
 			m_dpEntity->SetScale(m_Scale);
@@ -201,7 +201,7 @@ PhantomPhysicsComponent::PhantomPhysicsComponent(Entity* parent) : Component(par
 			m_dpEntity->SetPosition(m_Position + m_Rotation.GetForwardVector() * 7.5f);
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "env\\NG_NinjaGo\\ng_flamejet_brick_phantom.HKX")
+		else if (info->physics_asset == "env\\NG_NinjaGo\\ng_flamejet_brick_phantom.HKX")
 		{
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 1.0f, 1.0f, 12.0f);
 			m_dpEntity->SetScale(m_Scale);
@@ -209,7 +209,7 @@ PhantomPhysicsComponent::PhantomPhysicsComponent(Entity* parent) : Component(par
 			m_dpEntity->SetPosition(m_Position + m_Rotation.GetForwardVector() * 6.0f);
 			dpWorld::Instance().AddEntity(m_dpEntity);
 		}
-		else if (info->physicsAsset == "env\\Ring_Trigger.hkx")
+		else if (info->physics_asset == "env\\Ring_Trigger.hkx")
 		{
 			m_dpEntity = new dpEntity(m_Parent->GetObjectID(), 6.0f, 6.0f, 6.0f);
 			m_dpEntity->SetScale(m_Scale);

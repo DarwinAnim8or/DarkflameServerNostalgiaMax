@@ -1015,6 +1015,7 @@ void HandlePacket(Packet* packet) {
                     std::u16string username = GeneralUtils::ASCIIToUTF16(c->GetName());
                     WorldPackets::SendCreateCharacter(packet->systemAddress, c->GetObjectID(), c->GetXMLData(), username, c->GetGMLevel());
                     WorldPackets::SendServerState(packet->systemAddress);
+					return;
 
 					Game::server->GetReplicaManager()->AddParticipant(packet->systemAddress);
                     

@@ -423,16 +423,6 @@ void Entity::Initialize()
 
 		if (destCompData.size() > 0) {
 			comp->AddFaction(destCompData[0].faction);
-			std::stringstream ss(destCompData[0].factionList);
-			std::string token;
-
-			while (std::getline(ss, token, ',')) {
-				if (std::stoi(token) == destCompData[0].faction) continue;
-
-				if (token != "") {
-					comp->AddFaction(std::stoi(token));
-				}
-			}
 		}
 
 		m_Components.insert(std::make_pair(COMPONENT_TYPE_DESTROYABLE, comp));
@@ -562,8 +552,8 @@ void Entity::Initialize()
 			comp->SetInterruptible(rebCompData[0].interruptible);
 			comp->SetSelfActivator(rebCompData[0].self_activator);
 			comp->SetActivityId(rebCompData[0].activityID);
-			comp->SetPostImaginationCost(rebCompData[0].post_imagination_cost);
-			comp->SetTimeBeforeSmash(rebCompData[0].time_before_smash);
+			comp->SetPostImaginationCost(0); //ALPHA: not present.
+			comp->SetTimeBeforeSmash(rebCompData[0].reset_time); //ALPHA: Not present, guessed
 
 			const auto rebuildActivatorValue = GetVarAsString(u"rebuild_activators");
 
@@ -672,7 +662,7 @@ void Entity::Initialize()
 	    m_Components.insert(std::make_pair(COMPONENT_TYPE_RAIL_ACTIVATOR, new RailActivatorComponent(this, railComponentID)));
 	}
 
-	int movementAIID = compRegistryTable->GetByIDAndType(m_TemplateID, COMPONENT_TYPE_MOVEMENT_AI);
+	/*int movementAIID = compRegistryTable->GetByIDAndType(m_TemplateID, COMPONENT_TYPE_MOVEMENT_AI);
 	if (movementAIID > 0) {
 		CDMovementAIComponentTable* moveAITable = CDClientManager::Instance()->GetTable<CDMovementAIComponentTable>("MovementAIComponent");
 		std::vector<CDMovementAIComponent> moveAIComp = moveAITable->Query([=](CDMovementAIComponent entry) {return (entry.id == movementAIID); });
@@ -711,18 +701,31 @@ void Entity::Initialize()
 		moveInfo.wanderDelayMin = 2;
 
 		m_Components.insert(std::make_pair(COMPONENT_TYPE_MOVEMENT_AI, new MovementAIComponent(this, moveInfo)));
+	}*/
+
+	//because alpha LU relied entirely on LUA to do it's ai, I'm just gonna bodge this in. 
+	if (petComponentId > 0 || combatAiId > 0 && GetComponent<BaseCombatAIComponent>()->GetTetherSpeed() > 0) {
+		MovementAIInfo moveInfo = MovementAIInfo();
+		moveInfo.movementType = "";
+		moveInfo.wanderChance = 1;
+		moveInfo.wanderRadius = 16;
+		moveInfo.wanderSpeed = 2.5f;
+		moveInfo.wanderDelayMax = 5;
+		moveInfo.wanderDelayMin = 2;
+
+		m_Components.insert(std::make_pair(COMPONENT_TYPE_MOVEMENT_AI, new MovementAIComponent(this, moveInfo)));
 	}
 
-	int proximityMonitorID = compRegistryTable->GetByIDAndType(m_TemplateID, COMPONENT_TYPE_PROXIMITY_MONITOR);
-	if (proximityMonitorID > 0) {
-		CDProximityMonitorComponentTable* proxCompTable = CDClientManager::Instance()->GetTable<CDProximityMonitorComponentTable>("ProximityMonitorComponent");
-		std::vector<CDProximityMonitorComponent> proxCompData = proxCompTable->Query([=](CDProximityMonitorComponent entry) { return (entry.id == proximityMonitorID); });
-		if (proxCompData.size() > 0) {
-			std::vector<std::string> proximityStr = GeneralUtils::SplitString(proxCompData[0].Proximities, ',');
-			ProximityMonitorComponent* comp = new ProximityMonitorComponent(this, std::stoi(proximityStr[0]), std::stoi(proximityStr[1]));
-			m_Components.insert(std::make_pair(COMPONENT_TYPE_PROXIMITY_MONITOR, comp));
-		}
-	}
+	//int proximityMonitorID = compRegistryTable->GetByIDAndType(m_TemplateID, COMPONENT_TYPE_PROXIMITY_MONITOR);
+	//if (proximityMonitorID > 0) {
+	//	CDProximityMonitorComponentTable* proxCompTable = CDClientManager::Instance()->GetTable<CDProximityMonitorComponentTable>("ProximityMonitorComponent");
+	//	std::vector<CDProximityMonitorComponent> proxCompData = proxCompTable->Query([=](CDProximityMonitorComponent entry) { return (entry.id == proximityMonitorID); });
+	//	if (proxCompData.size() > 0) {
+	//		std::vector<std::string> proximityStr = GeneralUtils::SplitString(proxCompData[0].Proximities, ',');
+	//		ProximityMonitorComponent* comp = new ProximityMonitorComponent(this, std::stoi(proximityStr[0]), std::stoi(proximityStr[1]));
+	//		m_Components.insert(std::make_pair(COMPONENT_TYPE_PROXIMITY_MONITOR, comp));
+	//	}
+	//}
 
 	// Hacky way to trigger these when the object has had a chance to get constructed
 	AddCallbackTimer(0, [this]() {
@@ -1623,7 +1626,7 @@ void Entity::PickupItem(const LWOOBJID& objectID) {
 				std::vector<CDObjectSkills> skills = skillsTable->Query([=](CDObjectSkills entry) {return (entry.objectTemplate == p.second.lot); });
 				for (CDObjectSkills skill : skills) {
 					CDSkillBehaviorTable* skillBehTable = CDClientManager::Instance()->GetTable<CDSkillBehaviorTable>("SkillBehavior");
-					CDSkillBehavior behaviorData = skillBehTable->GetSkillByID(skill.skillID);
+					CDSkillBehavior& behaviorData = skillBehTable->GetSkillByID(skill.skillID);
 
 					SkillComponent::HandleUnmanaged(behaviorData.behaviorID, GetObjectID());
 

@@ -189,53 +189,56 @@ void CharacterComponent::SetPvpEnabled(const bool value)
 
 void CharacterComponent::HandleLevelUp()
 {
-	auto* rewardsTable = CDClientManager::Instance()->GetTable<CDRewardsTable>("Rewards");
+    //level rewards like items or speed boosts don't exist in alpha
 
-	const auto& rewards = rewardsTable->GetByLevelID(m_Level);
-    bool rewardingItem = rewards.size() > 0;
 
-	auto* parent = m_Character->GetEntity();
+	//auto* rewardsTable = CDClientManager::Instance()->GetTable<CDRewar>("Rewards");
 
-	if (parent == nullptr)
-	{
-		return;
-	}
+	//const auto& rewards = rewardsTable->GetByLevelID(m_Level);
+ //   bool rewardingItem = rewards.size() > 0;
 
-	auto* inventoryComponent = parent->GetComponent<InventoryComponent>();
-	auto* controllablePhysicsComponent = parent->GetComponent<ControllablePhysicsComponent>();
+	//auto* parent = m_Character->GetEntity();
 
-	if (inventoryComponent == nullptr || controllablePhysicsComponent == nullptr)
-	{
-		return;
-	}
-    // Tell the client we beginning to send level rewards.
-    if(rewardingItem) GameMessages::NotifyLevelRewards(parent->GetObjectID(), parent->GetSystemAddress(), m_Level, rewardingItem);
+	//if (parent == nullptr)
+	//{
+	//	return;
+	//}
 
-	for (auto* reward : rewards)
-	{
-		switch (reward->rewardType)
-		{
-		case 0:
-			inventoryComponent->AddItem(reward->value, reward->count);
-			break;
-		case 4:
-			{
-				auto* items = inventoryComponent->GetInventory(ITEMS);
-				items->SetSize(items->GetSize() + reward->value);
-			}
-			break;
-		case 9:
-			controllablePhysicsComponent->SetSpeedMultiplier(static_cast<float>(reward->value) / 500.0f);
-			break;
-		case 11:
-		case 12:
-			break;
-		default:
-			break;
-		}
-    }
-    // Tell the client we have finished sending level rewards.
-    if(rewardingItem) GameMessages::NotifyLevelRewards(parent->GetObjectID(), parent->GetSystemAddress(), m_Level, !rewardingItem);
+	//auto* inventoryComponent = parent->GetComponent<InventoryComponent>();
+	//auto* controllablePhysicsComponent = parent->GetComponent<ControllablePhysicsComponent>();
+
+	//if (inventoryComponent == nullptr || controllablePhysicsComponent == nullptr)
+	//{
+	//	return;
+	//}
+ //   // Tell the client we beginning to send level rewards.
+ //   if(rewardingItem) GameMessages::NotifyLevelRewards(parent->GetObjectID(), parent->GetSystemAddress(), m_Level, rewardingItem);
+
+	//for (auto* reward : rewards)
+	//{
+	//	switch (reward->rewardType)
+	//	{
+	//	case 0:
+	//		inventoryComponent->AddItem(reward->value, reward->count);
+	//		break;
+	//	case 4:
+	//		{
+	//			auto* items = inventoryComponent->GetInventory(ITEMS);
+	//			items->SetSize(items->GetSize() + reward->value);
+	//		}
+	//		break;
+	//	case 9:
+	//		controllablePhysicsComponent->SetSpeedMultiplier(static_cast<float>(reward->value) / 500.0f);
+	//		break;
+	//	case 11:
+	//	case 12:
+	//		break;
+	//	default:
+	//		break;
+	//	}
+ //   }
+ //   // Tell the client we have finished sending level rewards.
+ //   if(rewardingItem) GameMessages::NotifyLevelRewards(parent->GetObjectID(), parent->GetSystemAddress(), m_Level, !rewardingItem);
 }
 
 void CharacterComponent::SetGMLevel(int gmlevel) {

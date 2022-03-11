@@ -1497,48 +1497,14 @@ std::vector<Item*> InventoryComponent::GenerateProxies(Item* parent)
 {
 	std::vector<Item*> proxies;
 
-	auto subItems = parent->GetInfo().subItems;
+	//auto subItems = parent->GetInfo().subItems;
 
-	if (subItems.empty())
+	//if (subItems.empty())
 	{
 		return proxies;
 	}
 	
-	subItems.erase(std::remove_if(subItems.begin(), subItems.end(), ::isspace), subItems.end());
 	
-	std::stringstream stream(subItems);
-	std::string segment;
-	std::vector<uint32_t> lots;
-
-	while (std::getline(stream, segment, ','))
-	{
-		try
-		{
-			lots.push_back(std::stoi(segment));
-		}
-		catch (std::invalid_argument& exception)
-		{
-			Game::logger->Log("InventoryComponent", "Failed to parse proxy (%s): (%s)!\n", segment.c_str(), exception.what());
-		}
-	} 
-
-	for (const auto lot : lots)
-	{
-		if (!Inventory::IsValidItem(lot))
-		{
-			continue;
-		}
-
-		auto* inventory = GetInventory(ITEM_SETS);
-
-		auto* proxy = new Item(lot, inventory, inventory->FindEmptySlot(), 1, {}, parent->GetId(), false);
-
-		EquipItem(proxy);
-
-		proxies.push_back(proxy);
-	}
-	
-	return proxies;
 }
 
 std::vector<Item*> InventoryComponent::FindProxies(const LWOOBJID parent)
@@ -1582,29 +1548,7 @@ bool InventoryComponent::IsValidProxy(const LWOOBJID parent)
 
 bool InventoryComponent::IsParentValid(Item* root)
 {
-	if (root->GetInfo().subItems.empty())
-	{
-		return true;
-	}
-
-	const auto id = root->GetId();
-	
-	for (const auto& pair : m_Inventories)
-	{
-		const auto items = pair.second->GetItems();
-
-		for (const auto& candidate : items)
-		{
-			auto* item = candidate.second;
-
-			if (item->GetParent() == id)
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
+	return true; //no subitems in alpha
 }
 
 void InventoryComponent::CheckProxyIntegrity()

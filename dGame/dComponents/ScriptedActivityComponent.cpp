@@ -320,17 +320,17 @@ bool ScriptedActivityComponent::IsPlayedBy(LWOOBJID playerID) const {
 }
 
 bool ScriptedActivityComponent::TakeCost(Entity* player) const {
-	if (m_ActivityInfo.optionalCostLOT <= 0 || m_ActivityInfo.optionalCostCount <= 0)
-		return true;
+	//if (m_ActivityInfo.optionalCostLOT <= 0 || m_ActivityInfo.optionalCostCount <= 0)
+	//	return true;
 
-	auto* inventoryComponent = player->GetComponent<InventoryComponent>();
-	if (inventoryComponent == nullptr)
-		return false;
+	//auto* inventoryComponent = player->GetComponent<InventoryComponent>();
+	//if (inventoryComponent == nullptr)
+	//	return false;
 
-	if (inventoryComponent->GetLotCount(m_ActivityInfo.optionalCostLOT) < m_ActivityInfo.optionalCostCount)
-		return false;
+	//if (inventoryComponent->GetLotCount(m_ActivityInfo.optionalCostLOT) < m_ActivityInfo.optionalCostCount)
+	//	return false;
 
-	inventoryComponent->RemoveItem(m_ActivityInfo.optionalCostLOT, m_ActivityInfo.optionalCostCount);
+	//inventoryComponent->RemoveItem(m_ActivityInfo.optionalCostLOT, m_ActivityInfo.optionalCostCount);
 
 	return true;
 }

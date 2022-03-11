@@ -19,13 +19,9 @@
 
 Mission::Mission(MissionComponent* missionComponent, const uint32_t missionId) {
     m_MissionComponent = missionComponent;
-
     m_Completions = 0;
-
     m_Timestamp = 0;
-
     m_Reward = 0;
-
     m_State = MissionState::MISSION_STATE_UNKNOWN;
 
     auto* missionsTable = CDClientManager::Instance()->GetTable<CDMissionsTable>("Missions");
@@ -319,7 +315,7 @@ void Mission::Complete(const bool yieldRewards) {
 
     missionComponent->Progress(MissionTaskType::MISSION_TASK_TYPE_RACING, info->id, (LWOOBJID)RacingTaskParam::RACING_TASK_PARAM_COMPLETE_TRACK_TASKS);
 
-    auto* missionEmailTable = CDClientManager::Instance()->GetTable<CDMissionEmailTable>("MissionEmail");
+    /*auto* missionEmailTable = CDClientManager::Instance()->GetTable<CDMissionEmailTable>("MissionEmail");
 
     const auto missionId = GetMissionId();
 
@@ -340,7 +336,7 @@ void Mission::Complete(const bool yieldRewards) {
 
             Mail::SendMail(LWOOBJID_EMPTY, sender, GetAssociate(), subject, body, email.attachmentLOT, 1);
         }
-    }
+    }*/
 }
 
 void Mission::CheckCompletion() {
@@ -509,11 +505,11 @@ void Mission::YieldRewards() {
         inventory->SetSize(inventory->GetSize() + info->reward_maxinventory);
     }
 
-    if (info->reward_bankinventory > 0) {
+    /*if (info->reward_bankinventory > 0) {
         auto* inventory = inventoryComponent->GetInventory(VAULT_ITEMS);
 
         inventory->SetSize(inventory->GetSize() + info->reward_bankinventory);
-    }
+    }*/
 
     if (info->reward_reputation > 0) {
         // TODO: Track reputation in the character and database.

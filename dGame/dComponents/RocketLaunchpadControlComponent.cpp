@@ -18,22 +18,7 @@
 #include "PacketUtils.h"
 
 RocketLaunchpadControlComponent::RocketLaunchpadControlComponent(Entity* parent, int rocketId) : Component(parent) {
-	std::stringstream query;
 
-	query << "SELECT targetZone, defaultZoneID, targetScene, altLandingPrecondition, altLandingSpawnPointName FROM RocketLaunchpadControlComponent WHERE id = " << std::to_string(rocketId);
-
-	auto result = CDClientDatabase::ExecuteQuery(query.str());
-
-	if (!result.eof() && !result.fieldIsNull(0))
-	{
-		m_TargetZone = result.getIntField(0);
-		m_DefaultZone = result.getIntField(1);
-		m_TargetScene = result.getStringField(2);
-		m_AltPrecondition = new PreconditionExpression(result.getStringField(3));
-		m_AltLandingScene = result.getStringField(4);
-	}
-
-	result.finalize();
 }
 
 RocketLaunchpadControlComponent::~RocketLaunchpadControlComponent() {

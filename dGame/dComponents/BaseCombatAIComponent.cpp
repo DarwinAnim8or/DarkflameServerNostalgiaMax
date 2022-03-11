@@ -107,7 +107,7 @@ BaseCombatAIComponent::BaseCombatAIComponent(Entity* parent, const uint32_t id) 
 		auto* info = physicsComponentTable->GetByID(componentID);
 		if (info != nullptr)
 		{
-			collisionGroup = info->bStatic ? COLLISION_GROUP_NEUTRAL : info->collisionGroup;
+			collisionGroup = (bool)info->isStatic ? COLLISION_GROUP_NEUTRAL : info->collisionGroup;
 		}
 	}
 

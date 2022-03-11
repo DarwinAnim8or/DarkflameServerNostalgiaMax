@@ -7,7 +7,7 @@
 #include "MissionOfferComponent.h"
 #include "CDClientManager.h"
 #include "CDMissionsTable.h"
-#include "CDMissionNPCComponentTable.h"
+//#include "CDMissionNPCComponentTable.h"
 #include "GameMessages.h"
 #include "Entity.h"
 #include "MissionComponent.h"
@@ -48,19 +48,32 @@ MissionOfferComponent::MissionOfferComponent(Entity* parent, const LOT parentLot
     if (value != -1) {
 	    const uint32_t componentId = value;
 
-        // Now lookup the missions in the MissionNPCComponent table
-        auto* missionNpcComponentTable = CDClientManager::Instance()->GetTable<CDMissionNPCComponentTable>("MissionNPCComponent");
-    	
-        auto missions = missionNpcComponentTable->Query([=](const CDMissionNPCComponent& entry)
+        auto* table = CDClientManager::Instance()->GetTable<CDMissionsTable>("Missions");
+
+        auto missions = table->Query([=](const CDMissions& entry)
         {
-	        return entry.id == static_cast<unsigned>(componentId);
+            return entry.offer_objectID == static_cast<unsigned>(parentLot);
         });
 
         for (auto& mission : missions)
         {
-	        auto* offeredMission = new OfferedMission(mission.missionID, mission.offersMission, mission.acceptsMission);
+            auto* offeredMission = new OfferedMission(mission.id, true, parentLot == mission.target_objectID); //guessed
             this->offeredMissions.push_back(offeredMission);
         }
+
+        //// Now lookup the missions in the MissionNPCComponent table
+        //auto* missionNpcComponentTable = CDClientManager::Instance()->GetTable<CDMissionNPCComponentTable>("MissionNPCComponent");
+    	
+        //auto missions = missionNpcComponentTable->Query([=](const CDMissionNPCComponent& entry)
+        //{
+	       // return entry.id == static_cast<unsigned>(componentId);
+        //});
+
+        //for (auto& mission : missions)
+        //{
+	       // auto* offeredMission = new OfferedMission(mission.missionID, mission.offersMission, mission.acceptsMission);
+        //    this->offeredMissions.push_back(offeredMission);
+        //}
     }
 }
 
@@ -103,13 +116,13 @@ void MissionOfferComponent::OfferMissions(Entity* entity, const uint32_t specifi
 
     for (auto* offeredMission : this->offeredMissions)
     {
-        if (specifiedMissionId > 0)
+        /*if (specifiedMissionId > 0)
         {
-            if (offeredMission->GetMissionId() != specifiedMissionId && !info.isRandom)
+            if (offeredMission->GetMissionId() != specifiedMissionId && !info.)
             {
                 continue;
             }
-        }
+        }*/
 
         // First, check if we already have the mission
         const auto missionId = offeredMission->GetMissionId();
@@ -149,8 +162,8 @@ void MissionOfferComponent::OfferMissions(Entity* entity, const uint32_t specifi
 	        continue;
         }
         	
-        const auto& randomPool = info.randomPool;
-        const auto isRandom = info.isRandom;
+        const auto& randomPool = std::string(); //these didn't exist in alpha, but i just don't want to erase this block of code just in case
+        const auto isRandom = false;
         	
         if (isRandom && randomPool.empty()) // This means the mission is part of a random pool of missions.
         {
