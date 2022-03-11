@@ -23,12 +23,12 @@ struct CDZoneTable {
 
 class CDZoneTableTable : public CDTable {
 private:
-	std::vector<CDZoneTable> m_entries;
+	std::map<unsigned int, CDZoneTable> m_Entries;
+
 public:
 	CDZoneTableTable();
 	~CDZoneTableTable();
 	std::string GetName(void) const override;
 
-std::vector<CDZoneTable> Query(std::function<bool(CDZoneTable)> predicate);
-	std::vector<CDZoneTable> GetEntries(void) const;
+	const CDZoneTable* Query(unsigned int zoneID);
 };

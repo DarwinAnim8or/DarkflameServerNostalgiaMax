@@ -27,6 +27,7 @@ CDObjectsTable::CDObjectsTable() {
 		entry.interactionDistance = tableData.getFloatField(8, float{});
 		entry.nametag = tableData.getIntField(9, bool{});
 		this->m_entries.push_back(entry);
+		this->m_mappedEntries.insert(std::make_pair(entry.id, entry));
 		tableData.nextRow();
 	}
 
@@ -50,4 +51,13 @@ std::vector<CDObjects> CDObjectsTable::Query(std::function<bool(CDObjects)> pred
 
 std::vector<CDObjects> CDObjectsTable::GetEntries(void) const {
 	return this->m_entries;
+}
+
+CDObjects CDObjectsTable::GetByID(unsigned int lot) {
+	const auto& it = this->m_mappedEntries.find(lot);
+	if (it != this->m_mappedEntries.end()) {
+		return it->second;
+	}
+
+	return m_default;
 }

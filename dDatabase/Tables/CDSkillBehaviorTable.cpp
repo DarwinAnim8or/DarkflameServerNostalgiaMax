@@ -37,6 +37,7 @@ CDSkillBehaviorTable::CDSkillBehaviorTable() {
 		entry.damageUI = tableData.getIntField(18, int{});
 		entry.descriptionUI = tableData.getStringField(19, std::string{}.c_str());
 		this->m_entries.push_back(entry);
+		this->entries.insert(std::make_pair(entry.skillID, entry));
 		tableData.nextRow();
 	}
 
@@ -60,4 +61,13 @@ std::vector<CDSkillBehavior> CDSkillBehaviorTable::Query(std::function<bool(CDSk
 
 std::vector<CDSkillBehavior> CDSkillBehaviorTable::GetEntries(void) const {
 	return this->m_entries;
+}
+
+CDSkillBehavior CDSkillBehaviorTable::GetSkillByID(int id) {
+	const auto& it = this->entries.find(id);
+	if (it != this->entries.end()) {
+		return it->second;
+	}
+
+	return m_default;
 }

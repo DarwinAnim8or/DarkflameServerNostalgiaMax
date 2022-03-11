@@ -30,11 +30,17 @@ struct CDSkillBehavior {
 class CDSkillBehaviorTable : public CDTable {
 private:
 	std::vector<CDSkillBehavior> m_entries;
+	std::map<int, CDSkillBehavior> entries;
+
+	CDSkillBehavior m_default{};
+
 public:
 	CDSkillBehaviorTable();
 	~CDSkillBehaviorTable();
 	std::string GetName(void) const override;
 
-std::vector<CDSkillBehavior> Query(std::function<bool(CDSkillBehavior)> predicate);
+	std::vector<CDSkillBehavior> Query(std::function<bool(CDSkillBehavior)> predicate);
 	std::vector<CDSkillBehavior> GetEntries(void) const;
+
+	CDSkillBehavior GetSkillByID(int id);
 };

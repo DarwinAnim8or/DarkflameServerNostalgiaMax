@@ -13,12 +13,15 @@ struct CDBehaviorParameter {
 
 class CDBehaviorParameterTable : public CDTable {
 private:
-	std::vector<CDBehaviorParameter> m_entries;
+	std::map<size_t, float> m_Entries;
+
 public:
 	CDBehaviorParameterTable();
 	~CDBehaviorParameterTable();
 	std::string GetName(void) const override;
 
-std::vector<CDBehaviorParameter> Query(std::function<bool(CDBehaviorParameter)> predicate);
-	std::vector<CDBehaviorParameter> GetEntries(void) const;
+	std::vector<CDBehaviorParameter> Query(std::function<bool(CDBehaviorParameter)> predicate);
+	//std::vector<CDBehaviorParameter> GetEntries(void) const;
+
+	float GetEntry(const uint32_t behaviorID, const std::string& name, const float defaultValue = 0);
 };

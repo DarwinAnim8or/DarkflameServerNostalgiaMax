@@ -20,6 +20,9 @@ struct CDObjects {
 class CDObjectsTable : public CDTable {
 private:
 	std::vector<CDObjects> m_entries;
+	std::map<int, CDObjects> m_mappedEntries;
+	CDObjects m_default{};
+
 public:
 	CDObjectsTable();
 	~CDObjectsTable();
@@ -27,4 +30,6 @@ public:
 
 std::vector<CDObjects> Query(std::function<bool(CDObjects)> predicate);
 	std::vector<CDObjects> GetEntries(void) const;
+
+	CDObjects GetByID(unsigned int lot);
 };

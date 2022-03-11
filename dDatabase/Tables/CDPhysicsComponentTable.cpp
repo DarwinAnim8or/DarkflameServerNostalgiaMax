@@ -32,6 +32,7 @@ CDPhysicsComponentTable::CDPhysicsComponentTable() {
 		entry.jumpAirSpeed = tableData.getFloatField(13, float{});
 		entry.friction = tableData.getFloatField(14, float{});
 		this->m_entries.push_back(entry);
+		m_mappedEntities.insert(std::make_pair(entry.id, entry));
 		tableData.nextRow();
 	}
 
@@ -55,4 +56,12 @@ std::vector<CDPhysicsComponent> CDPhysicsComponentTable::Query(std::function<boo
 
 std::vector<CDPhysicsComponent> CDPhysicsComponentTable::GetEntries(void) const {
 	return this->m_entries;
+}
+
+CDPhysicsComponent* CDPhysicsComponentTable::GetByID(unsigned int ID) {
+	for (auto e : m_mappedEntities) {
+		if (e.first == ID) return &e.second;
+	}
+
+	return nullptr;
 }

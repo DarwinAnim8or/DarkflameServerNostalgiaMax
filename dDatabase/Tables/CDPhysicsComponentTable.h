@@ -25,11 +25,15 @@ struct CDPhysicsComponent {
 class CDPhysicsComponentTable : public CDTable {
 private:
 	std::vector<CDPhysicsComponent> m_entries;
+	std::map<int, CDPhysicsComponent> m_mappedEntities;
+
 public:
 	CDPhysicsComponentTable();
 	~CDPhysicsComponentTable();
 	std::string GetName(void) const override;
 
-std::vector<CDPhysicsComponent> Query(std::function<bool(CDPhysicsComponent)> predicate);
+	std::vector<CDPhysicsComponent> Query(std::function<bool(CDPhysicsComponent)> predicate);
 	std::vector<CDPhysicsComponent> GetEntries(void) const;
+
+	CDPhysicsComponent* GetByID(unsigned int ID);
 };

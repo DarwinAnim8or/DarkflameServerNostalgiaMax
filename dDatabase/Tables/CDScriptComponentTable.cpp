@@ -19,6 +19,7 @@ CDScriptComponentTable::CDScriptComponentTable() {
 		entry.id = tableData.getIntField(0, int{});
 		entry.script_name = tableData.getStringField(1, std::string{}.c_str());
 		entry.client_script_name = tableData.getStringField(2, std::string{}.c_str());
+		this->entries.insert(std::make_pair(entry.id, entry));
 		this->m_entries.push_back(entry);
 		tableData.nextRow();
 	}
@@ -43,4 +44,13 @@ std::vector<CDScriptComponent> CDScriptComponentTable::Query(std::function<bool(
 
 std::vector<CDScriptComponent> CDScriptComponentTable::GetEntries(void) const {
 	return this->m_entries;
+}
+
+const CDScriptComponent& CDScriptComponentTable::GetByID(int id) {
+	std::map<int, CDScriptComponent>::iterator it = this->entries.find(id);
+	if (it != this->entries.end()) {
+		return it->second;
+	}
+
+	return m_default;
 }

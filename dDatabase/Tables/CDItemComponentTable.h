@@ -40,12 +40,12 @@ struct CDItemComponent {
 
 class CDItemComponentTable : public CDTable {
 private:
-	std::vector<CDItemComponent> m_entries;
+	std::map<unsigned int, CDItemComponent> entries;
 public:
 	CDItemComponentTable();
 	~CDItemComponentTable();
 	std::string GetName(void) const override;
 
-std::vector<CDItemComponent> Query(std::function<bool(CDItemComponent)> predicate);
-	std::vector<CDItemComponent> GetEntries(void) const;
+	static CDItemComponent Default;
+	const CDItemComponent& GetItemComponentByID(unsigned int skillID);
 };

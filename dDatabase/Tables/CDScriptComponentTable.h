@@ -13,11 +13,17 @@ struct CDScriptComponent {
 class CDScriptComponentTable : public CDTable {
 private:
 	std::vector<CDScriptComponent> m_entries;
+	std::map<int, CDScriptComponent> entries;
+
+	CDScriptComponent m_default{};
+
 public:
 	CDScriptComponentTable();
 	~CDScriptComponentTable();
 	std::string GetName(void) const override;
 
-std::vector<CDScriptComponent> Query(std::function<bool(CDScriptComponent)> predicate);
+	std::vector<CDScriptComponent> Query(std::function<bool(CDScriptComponent)> predicate);
 	std::vector<CDScriptComponent> GetEntries(void) const;
+
+	const CDScriptComponent& GetByID(int id);
 };

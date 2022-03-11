@@ -11,7 +11,6 @@ CDZoneTableTable::CDZoneTableTable() {
 	}
 
 	tableSize.finalize();
-	this->m_entries.reserve(size);
 
 	auto tableData = CDClientDatabase::ExecuteQuery("SELECT * FROM ZoneTable");
 	while (!tableData.eof()) {
@@ -30,7 +29,7 @@ CDZoneTableTable::CDZoneTableTable() {
 		entry.clientPhysicsFramerate = tableData.getStringField(11, std::string{}.c_str());
 		entry.serverPhysicsFramerate = tableData.getStringField(12, std::string{}.c_str());
 		entry.zoneControlTemplate = tableData.getIntField(13, int{});
-		this->m_entries.push_back(entry);
+		this->m_Entries.insert(std::make_pair(entry.zoneID, entry));
 		tableData.nextRow();
 	}
 
@@ -44,14 +43,12 @@ std::string CDZoneTableTable::GetName(void) const {
 	return "ZoneTable";
 }
 
-std::vector<CDZoneTable> CDZoneTableTable::Query(std::function<bool(CDZoneTable)> predicate) {
-	std::vector<CDZoneTable> data = cpplinq::from(this->m_entries)
-		>> cpplinq::where(predicate)
-		>> cpplinq::to_vector();
+const CDZoneTable* CDZoneTableTable::Query(unsigned int zoneID) {
+	const auto& iter = m_Entries.find(zoneID);
 
-	return data;
-}
+	if (iter != m_Entries.end()) {
+		return &iter->second;
+	}
 
-std::vector<CDZoneTable> CDZoneTableTable::GetEntries(void) const {
-	return this->m_entries;
+	return nullptr;
 }

@@ -26,6 +26,8 @@ public:
 	~CDMissionTasksTable();
 	std::string GetName(void) const override;
 
-std::vector<CDMissionTasks> Query(std::function<bool(CDMissionTasks)> predicate);
+	std::vector<CDMissionTasks> Query(std::function<bool(CDMissionTasks)> predicate);
 	std::vector<CDMissionTasks> GetEntries(void) const;
+
+	std::vector<CDMissionTasks*> GetByMissionID(uint32_t missionID);
 };

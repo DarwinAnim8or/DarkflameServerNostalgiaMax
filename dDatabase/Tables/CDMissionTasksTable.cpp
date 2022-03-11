@@ -52,3 +52,17 @@ std::vector<CDMissionTasks> CDMissionTasksTable::Query(std::function<bool(CDMiss
 std::vector<CDMissionTasks> CDMissionTasksTable::GetEntries(void) const {
 	return this->m_entries;
 }
+
+std::vector<CDMissionTasks*> CDMissionTasksTable::GetByMissionID(uint32_t missionID) {
+	std::vector<CDMissionTasks*> tasks;
+
+	for (auto& entry : this->m_entries) {
+		if (entry.id == missionID) {
+			CDMissionTasks* task = const_cast<CDMissionTasks*>(&entry);
+
+			tasks.push_back(task);
+		}
+	}
+
+	return tasks;
+}
