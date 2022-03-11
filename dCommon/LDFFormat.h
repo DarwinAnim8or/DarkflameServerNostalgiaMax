@@ -209,7 +209,7 @@ template<>
 inline void LDFData<std::u16string>::WriteValue(RakNet::BitStream * packet) {
     packet->Write(static_cast<uint8_t>(this->GetValueType()));
     
-    packet->Write(static_cast<uint32_t>(this->value.length()));
+    packet->Write(static_cast<uint16_t>(this->value.length()));
     for (uint32_t i = 0; i < this->value.length(); ++i) {
         packet->Write(static_cast<uint16_t>(this->value[i]));
     }
