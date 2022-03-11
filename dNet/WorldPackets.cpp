@@ -113,7 +113,7 @@ void WorldPackets::SendTransferToWorld ( const SystemAddress& sysAddr, const std
 	PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_TRANSFER_TO_WORLD);
 	
 	PacketUtils::WriteString(bitStream, serverIP, 33);
-	bitStream.Write(static_cast<uint16_t>(serverPort));
+    bitStream.Write(static_cast<uint16_t>(serverPort));
 	bitStream.Write(static_cast<uint8_t>(mythranShift));
 	
 	SEND_PACKET
@@ -131,7 +131,7 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_CREATE_CHARACTER);
     
     RakNet::BitStream data;
-    data.Write<uint32_t>(6); //LDF key count
+    data.Write<uint32_t>(8); //LDF key count
 
     LDFData<LWOOBJID>* objid = new LDFData<LWOOBJID>(u"objid", objectID);
     LDFData<LOT>* lot = new LDFData<LOT>(u"template", 1);
@@ -139,12 +139,16 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     LDFData<std::u16string>* name = new LDFData<std::u16string>(u"name", username);
     LDFData<int32_t>* gmlevel = new LDFData<int32_t>(u"gmlevel", gm);
     LDFData<int32_t>* chatmode = new LDFData<int32_t>(u"chatmode", gm);
+    LDFData<bool>* editor_enabled = new LDFData<bool>(u"editor_enabled", true);
+    LDFData<int32_t>* editor_level = new LDFData<int32_t>(u"editor_level", 9);
     
     objid->WriteToPacket(&data);
     lot->WriteToPacket(&data);
     name->WriteToPacket(&data);
     gmlevel->WriteToPacket(&data);
     chatmode->WriteToPacket(&data);
+    editor_enabled->WriteToPacket(&data);
+    editor_level->WriteToPacket(&data);
     xmlConfigData->WriteToPacket(&data);
     
     delete objid;
@@ -153,6 +157,8 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     delete gmlevel;
     delete chatmode;
     delete name;
+    delete editor_level;
+    delete editor_enabled;
     
 #ifdef _WIN32
     bitStream.Write<uint32_t>(data.GetNumberOfBytesUsed() + 1);
