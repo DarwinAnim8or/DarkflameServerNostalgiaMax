@@ -198,21 +198,6 @@ void AuthPackets::SendLoginResponse(dServer* server, const SystemAddress& sysAdd
     
     packet.Write(static_cast<uint8_t>(responseCode));
     
-    PacketUtils::WritePacketString("Talk_Like_A_Pirate", 33, &packet);
-    
-    // 7 unknown strings - perhaps other IP addresses?
-    PacketUtils::WritePacketString("", 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
-    
-    packet.Write(static_cast<uint16_t>(1));         // Version Major
-    packet.Write(static_cast<uint16_t>(10));        // Version Current
-    packet.Write(static_cast<uint16_t>(64));        // Version Minor
-    
     // Writes the user key
 	uint32_t sessionKey = rand(); // not mt but whatever
 	std::string userHash = std::to_string(sessionKey);
@@ -221,41 +206,13 @@ void AuthPackets::SendLoginResponse(dServer* server, const SystemAddress& sysAdd
     
     // Write the Character and Chat IPs
     PacketUtils::WritePacketString(wServerIP, 33, &packet);
-    PacketUtils::WritePacketString("", 33, &packet);
+    PacketUtils::WritePacketString(wServerIP, 33, &packet);
     
     // Write the Character and Chat Ports
     packet.Write(static_cast<uint16_t>(wServerPort));
-    packet.Write(static_cast<uint16_t>(0));
-    
-    // Write another IP
-    PacketUtils::WritePacketString("", 33, &packet);
-    
-    // Write a GUID or something...
-    PacketUtils::WritePacketString("00000000-0000-0000-0000-000000000000", 37, &packet);
-    
-    packet.Write(static_cast<uint32_t>(0));         // ???
-    
-    // Write the localization
-    PacketUtils::WritePacketString("US", 3, &packet);
-    
-    packet.Write(static_cast<uint8_t>(false));      // User first logged in?
-    packet.Write(static_cast<uint8_t>(false));      // User is F2P?
-    packet.Write(static_cast<uint64_t>(0));         // ???
-    
-    // Write custom error message
-    packet.Write(static_cast<uint16_t>(errorMsg.length()));
-    PacketUtils::WritePacketWString(errorMsg, static_cast<uint32_t>(errorMsg.length()), &packet);
-    
-    // Here write auth logs
-    packet.Write(static_cast<uint32_t>(20));
-    for (uint32_t i = 0; i < 20; ++i) {
-        packet.Write(static_cast<uint32_t>(8));
-        packet.Write(static_cast<uint32_t>(44));
-        packet.Write(static_cast<uint32_t>(14000));
-        packet.Write(static_cast<uint32_t>(0));
-    }
-    
-    server->Send(&packet, sysAddr, false);
+    packet.Write(static_cast<uint16_t>(2005)); //this would be the chat port
+
+	server->Send(&packet, sysAddr, false);
 
 	//Inform the master server that we've created a session for this user:
 	{
