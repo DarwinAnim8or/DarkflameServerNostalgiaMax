@@ -46,13 +46,12 @@ void Zone::LoadZoneIntoMemory() {
 	if (file) {
 		BinaryIO::BinaryRead(file, m_ZoneFileFormatVersion);
 		
-		uint32_t mapRevision = 0;
-		if (m_ZoneFileFormatVersion >= Zone::ZoneFileFormatVersion::Alpha) BinaryIO::BinaryRead(file, mapRevision);
+		if (m_ZoneFileFormatVersion >= Zone::ZoneFileFormatVersion::Alpha) BinaryIO::BinaryRead(file, m_ZoneRevision);
         
 		BinaryIO::BinaryRead(file, m_WorldID);
 		if ((uint16_t)m_WorldID != m_ZoneID.GetMapID()) Game::logger->Log("Zone", "WorldID: %i doesn't match MapID %i! Is this intended?\n", m_WorldID, m_ZoneID.GetMapID());
 
-		AddRevision(LWOSCENEID_INVALID, mapRevision);
+		AddRevision(LWOSCENEID_INVALID, m_ZoneRevision);
 
 		if (m_ZoneFileFormatVersion >= Zone::ZoneFileFormatVersion::Beta) {
 			BinaryIO::BinaryRead(file, m_Spawnpoint);
@@ -181,26 +180,8 @@ std::string Zone::GetFilePathForZoneID() {
 
 //Based off code from: https://www.liquisearch.com/fletchers_checksum/implementation/optimizations
 uint32_t Zone::CalculateChecksum() {
-	uint32_t sum1 = 0xffff, sum2 = 0xffff;
-
-	for (std::map<LWOSCENEID, uint32_t>::const_iterator it = m_MapRevisions.cbegin(); it != m_MapRevisions.cend(); ++it) {
-		uint32_t sceneID = it->first.GetSceneID();
-		sum2 += sum1 += (sceneID >> 16);
-		sum2 += sum1 += (sceneID & 0xffff);
-
-		uint32_t layerID = it->first.GetLayerID();
-		sum2 += sum1 += (layerID >> 16);
-		sum2 += sum1 += (layerID & 0xffff);
-
-		uint32_t revision = it->second;
-		sum2 += sum1 += (revision >> 16);
-		sum2 += sum1 += (revision & 0xffff);
-	}
-
-	sum1 = (sum1 & 0xffff) + (sum1 >> 16);
-	sum2 = (sum2 & 0xffff) + (sum2 >> 16);
-
-	return sum2 << 16 | sum1;
+	//glorious alpha need not this
+	return m_ZoneRevision;
 }
 
 void Zone::LoadLevelsIntoMemory() {

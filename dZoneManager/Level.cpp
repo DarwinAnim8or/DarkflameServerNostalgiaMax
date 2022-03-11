@@ -11,7 +11,7 @@
 #include "GeneralUtils.h"
 #include "Entity.h"
 #include "EntityManager.h"
-#include "CDFeatureGatingTable.h"
+//#include "CDFeatureGatingTable.h"
 #include "CDClientManager.h"
 
 Level::Level(Zone* parentZone, const std::string& filepath) {
@@ -162,7 +162,7 @@ void Level::ReadSceneObjectDataChunk(std::ifstream & file, Header & header) {
 	uint32_t objectsCount = 0;
 	BinaryIO::BinaryRead(file, objectsCount);
 
-	CDFeatureGatingTable* featureGatingTable = CDClientManager::Instance()->GetTable<CDFeatureGatingTable>("FeatureGating");
+	//CDFeatureGatingTable* featureGatingTable = CDClientManager::Instance()->GetTable<CDFeatureGatingTable>("FeatureGating");
 
 	for (uint32_t i = 0; i < objectsCount; ++i) {
 		SceneObject obj;
@@ -204,30 +204,6 @@ void Level::ReadSceneObjectDataChunk(std::ifstream & file, Header & header) {
         }
 
 		BinaryIO::BinaryRead(file, obj.value3);
-
-		// Feature gating
-		bool gated = false;
-		for (LDFBaseData* data : obj.settings) {
-			if (data->GetKey() == u"gatingOnFeature") {
-				std::string featureGate = data->GetValueAsString();
-
-				if (!featureGatingTable->FeatureUnlocked(featureGate)) {
-					gated = true;
-
-					break;
-				}
-			}
-		}
-
-		if (gated) {
-			for (auto* setting : obj.settings) {
-				delete setting;
-			}
-
-			obj.settings.clear();
-
-			continue;
-		}
 
         if (obj.lot == 176) { //Spawner
 			SpawnerInfo spawnInfo = SpawnerInfo();

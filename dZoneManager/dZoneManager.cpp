@@ -28,15 +28,15 @@ void dZoneManager::Initialize(const LWOZONEID& zoneID) {
 
 	CDZoneTableTable* zoneTable = CDClientManager::Instance()->GetTable<CDZoneTableTable>("ZoneTable");
 	if (zoneTable != nullptr){
-		const CDZoneTable* zone = zoneTable->Query(zoneID.GetMapID());
+		auto zone = zoneTable->Query(zoneID.GetMapID());
 
 		if (zone != nullptr) {
 			zoneControlTemplate = zone->zoneControlTemplate != -1 ? zone->zoneControlTemplate : 2365;
-			const auto min = zone->ghostdistance_min != -1.0f ? zone->ghostdistance_min : 100;
+			const auto min = 10.0f; //no idea? wasn't present in alpha; update this if needed.
 			const auto max = zone->ghostdistance != -1.0f ? zone->ghostdistance : 100;
 			EntityManager::Instance()->SetGhostDistanceMax(max + min);
 			EntityManager::Instance()->SetGhostDistanceMin(max);
-			m_PlayerLoseCoinsOnDeath = zone->PlayerLoseCoinsOnDeath;
+			m_PlayerLoseCoinsOnDeath = true; //not present in alpha, assumed true
         }
 	}
 

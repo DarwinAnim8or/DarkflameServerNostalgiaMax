@@ -209,6 +209,7 @@ private:
 	NiPoint3 m_Spawnpoint;
 	NiQuaternion m_SpawnpointRotation;
 	uint32_t m_SceneCount;
+	uint32_t m_ZoneRevision; //alpha's "checksum"
 
 	std::string m_ZonePath; //Path to the .luz's folder
 	std::string m_ZoneName; //Name given to the zone by a level designer
