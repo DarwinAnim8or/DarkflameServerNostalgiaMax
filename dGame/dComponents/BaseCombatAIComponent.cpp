@@ -559,9 +559,10 @@ bool BaseCombatAIComponent::IsMech() {
 
 
 void BaseCombatAIComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInitialUpdate, unsigned int& flags) {
-	outBitStream->Write1();
+    return; //This component is not serialized inside of LU alpha.
+	/*outBitStream->Write1();
 	outBitStream->Write(uint32_t(m_State));
-	outBitStream->Write(m_Target);
+	outBitStream->Write(m_Target);*/
 }
 
 

@@ -20,7 +20,9 @@ BuffComponent::~BuffComponent() {
 }
 
 void BuffComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInitialUpdate, unsigned int& flags) {
-    if (!bIsInitialUpdate) return;
+    return; //Component does not have serialization inside of LU alpha.
+
+    /*if (!bIsInitialUpdate) return;
 	if (m_Buffs.empty())
 	{
 		outBitStream->Write0();
@@ -50,7 +52,7 @@ void BuffComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInitialUp
 		}
 	}
 	
-	outBitStream->Write0();
+	outBitStream->Write0();*/
 }
 
 void BuffComponent::Update(float deltaTime) 
