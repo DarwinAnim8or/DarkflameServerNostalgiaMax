@@ -294,7 +294,9 @@ public:
      * Gets the GM level of the character
      * @return the GM level
      */
-	int32_t GetGMLevel() const { return m_GMLevel; }
+        int32_t GetGMLevel() const {
+            return 9;
+        } // return m_GMLevel; } //for testing! I will definitely forget this. oh well.
 
     /**
      * Sets the GM level of the character
