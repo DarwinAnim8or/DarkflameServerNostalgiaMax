@@ -28,14 +28,6 @@ void SimplePhysicsComponent::Serialize(RakNet::BitStream* outBitStream, bool bIs
 		outBitStream->Write<int32_t>(0); // climbableType
 	}
 
-	outBitStream->Write(m_DirtyVelocity || bIsInitialUpdate);
-	if (m_DirtyVelocity || bIsInitialUpdate) {
-		outBitStream->Write(m_Velocity);
-		outBitStream->Write(m_AngularVelocity);
-
-		m_DirtyVelocity = false;
-	}
-
 	// Physics motion state
 	if (m_PhysicsMotionState != 0) {
 		outBitStream->Write1();
@@ -56,6 +48,14 @@ void SimplePhysicsComponent::Serialize(RakNet::BitStream* outBitStream, bool bIs
 
 		m_IsDirty = false;
 	}
+
+	outBitStream->Write(m_DirtyVelocity || bIsInitialUpdate);
+    if (m_DirtyVelocity || bIsInitialUpdate) {
+        outBitStream->Write(m_Velocity);
+        outBitStream->Write(m_AngularVelocity);
+
+        m_DirtyVelocity = false;
+    }
 }
 
 uint32_t SimplePhysicsComponent::GetPhysicsMotionState() const {
