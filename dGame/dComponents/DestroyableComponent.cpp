@@ -124,10 +124,17 @@ void DestroyableComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsIn
         outBitStream->Write(m_fMaxArmor);
         outBitStream->Write(m_fMaxImagination);
 
-		outBitStream->Write(uint32_t(m_FactionIDs.size()));
+		//Alpha only writes a single int to note faction ID
+		if (m_FactionIDs.size() > 0) {
+			outBitStream->Write(m_FactionIDs[0]);
+        } else {
+            outBitStream->Write<uint32_t>(0);
+        }
+
+		/*outBitStream->Write(uint32_t(m_FactionIDs.size()));
 		for (size_t i = 0; i < m_FactionIDs.size(); ++i) {
 			outBitStream->Write(m_FactionIDs[i]);
-		}
+		}*/
 
         outBitStream->Write(m_IsSmashable);
         
