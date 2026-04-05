@@ -213,8 +213,8 @@ int main(int argc, char** argv) {
 	if (config.GetValue("prestart_servers") != "" && config.GetValue("prestart_servers") == "1") {
 		StartChatServer();
 
-		Game::im->GetInstance(0, false, 0)->SetIsReady(true);
-		Game::im->GetInstance(1000, false, 0)->SetIsReady(true);
+		//Game::im->GetInstance(0, false, 0)->SetIsReady(true);
+		//Game::im->GetInstance(1000, false, 0)->SetIsReady(true);
 
 		StartAuthServer();
 	}
