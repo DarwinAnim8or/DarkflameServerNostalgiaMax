@@ -1,4 +1,4 @@
-#include "CharacterComponent.h"
+﻿#include "CharacterComponent.h"
 #include <BitStream.h>
 #include "tinyxml2.h"
 #include "Game.h"
@@ -104,25 +104,26 @@ void CharacterComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInit
         outBitStream->Write<uint64_t>(0);                 //"prop mod last display time"
 
         std::wstring lastCustombuild;
-        outBitStream->Write(lastCustombuild.empty());
+        outBitStream->Write(!lastCustombuild.empty()); //returns true when empty
         if (!lastCustombuild.empty()) {
             outBitStream->Write(static_cast<uint16_t>(lastCustombuild.size()));
             outBitStream->WriteBits(reinterpret_cast<const unsigned char*>(lastCustombuild.c_str()), static_cast<uint16_t>(lastCustombuild.size()) * 2 * 8);
         }
 
-        LWOOBJID possessedObjectMaybe;
-        outBitStream->Write(possessedObjectMaybe != LWOOBJID_EMPTY);
+        LWOOBJID possessedObjectMaybe = LWOOBJID_EMPTY; //Init to empty.
+        outBitStream->Write(possessedObjectMaybe != LWOOBJID_EMPTY); // writes 0
         if (possessedObjectMaybe != LWOOBJID_EMPTY)
             outBitStream->Write(possessedObjectMaybe);
     }
 
-    outBitStream->Write(m_DirtyGMInfo);
-    if (m_DirtyGMInfo) {
+    outBitStream->Write(m_DirtyGMInfo || bIsInitialUpdate);
+    if (m_DirtyGMInfo || bIsInitialUpdate) {
         outBitStream->Write(m_PvpEnabled);
         outBitStream->Write(m_IsGM);
-        outBitStream->Write(m_GMLevel);
+        outBitStream->Write<uint8_t>(static_cast<uint8_t>(m_GMLevel)); // 8 bits, NOT 32!
         outBitStream->Write(m_EditorEnabled);
-        outBitStream->Write(m_EditorLevel);
+        outBitStream->Write<uint8_t>(static_cast<uint8_t>(m_EditorLevel)); // 8 bits, NOT 32!
+        m_DirtyGMInfo = false;
     }
 
     outBitStream->Write(m_DirtyCurrentActivity);

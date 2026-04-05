@@ -233,6 +233,8 @@ private:
      */
     dpEntity* m_dpEntity;
 
+    bool m_DirtyJetpack;
+
     /**
      * Whether or not the position is dirty, forcing a serialization update of the position
      */

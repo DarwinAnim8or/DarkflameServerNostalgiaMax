@@ -20,6 +20,7 @@ ControllablePhysicsComponent::ControllablePhysicsComponent(Entity* entity) : Com
 	m_InJetpackMode = false;
 	m_IsOnGround = true;
 	m_IsOnRail = false;
+        m_DirtyJetpack = false;
 	m_DirtyPosition = true;
 	m_DirtyVelocity = true;
 	m_DirtyAngularVelocity = true;
@@ -54,72 +55,50 @@ void ControllablePhysicsComponent::Update(float deltaTime) {
 }
 
 void ControllablePhysicsComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInitialUpdate, unsigned int& flags) {
-	//If this is a creation, then we assume the position is dirty, even when it isn't.
-	//This is because new clients will still need to receive the position.
-	//if (bIsInitialUpdate) m_DirtyPosition = true;
+    // SECTION 1: Cheats — only when dirty, NOT on initial update
+    outBitStream->Write(m_DirtyCheats);
+    if (m_DirtyCheats) {
+        outBitStream->Write(m_GravityScale);
+        outBitStream->Write(m_SpeedMultiplier);
+        m_DirtyCheats = false;
+    }
 
-	if (bIsInitialUpdate) {
-		outBitStream->Write(m_InJetpackMode);
-		if (m_InJetpackMode) {
-			outBitStream->Write(m_JetpackEffectID);
-			outBitStream->Write(m_JetpackFlying);
-			outBitStream->Write(m_JetpackBypassChecks);
-		}
+    // SECTION 2: Jetpack — only when dirty, NOT on initial update
+    outBitStream->Write(m_DirtyJetpack);
+    if (m_DirtyJetpack) {
+        outBitStream->Write(m_InJetpackMode);
+        if (m_InJetpackMode) {
+            outBitStream->Write(m_JetpackEffectID);
+            outBitStream->Write(m_JetpackFlying);
+        }
+        m_DirtyJetpack = false;
+    }
 
-		outBitStream->Write0(); //This contains info about immunities, but for now I'm leaving it out.
-	}
-
-	if (m_SpeedMultiplier < 1.0f) {
-		m_DirtyCheats = false;
-	}
-
-	if (m_IgnoreMultipliers) {
-		m_DirtyCheats = false;
-	}
-
-	outBitStream->Write(m_DirtyCheats);
-	if (m_DirtyCheats) {
-		outBitStream->Write(m_GravityScale);
-		outBitStream->Write(m_SpeedMultiplier);
-
-		m_DirtyCheats = false;
-	}
-
-	outBitStream->Write0();
-	outBitStream->Write0();
-
-	outBitStream->Write(m_DirtyPosition || bIsInitialUpdate);
-	if (m_DirtyPosition || bIsInitialUpdate) {
-		outBitStream->Write(m_Position.x);
-		outBitStream->Write(m_Position.y);
-		outBitStream->Write(m_Position.z);
-
-		outBitStream->Write(m_Rotation.x);
-		outBitStream->Write(m_Rotation.y);
-		outBitStream->Write(m_Rotation.z);
-		outBitStream->Write(m_Rotation.w);
-
-		outBitStream->Write(m_IsOnGround);
-		outBitStream->Write(m_IsOnRail);
-
-		outBitStream->Write(m_DirtyVelocity);
-		if (m_DirtyVelocity) {
-			outBitStream->Write(m_Velocity.x);
-			outBitStream->Write(m_Velocity.y);
-			outBitStream->Write(m_Velocity.z);
-		}
-
-		outBitStream->Write(m_DirtyAngularVelocity);
-		if (m_DirtyAngularVelocity) {
-			outBitStream->Write(m_AngularVelocity.x);
-			outBitStream->Write(m_AngularVelocity.y);
-			outBitStream->Write(m_AngularVelocity.z);
-		}
-
-		outBitStream->Write0();
-	}
-
-	if (!bIsInitialUpdate) outBitStream->Write0();
+    // SECTION 3: Position — THIS one should be sent on initial update
+    outBitStream->Write(m_DirtyPosition || bIsInitialUpdate);
+    if (m_DirtyPosition || bIsInitialUpdate) {
+        outBitStream->Write(m_Position.x);
+        outBitStream->Write(m_Position.y);
+        outBitStream->Write(m_Position.z);
+        outBitStream->Write(m_Rotation.x);
+        outBitStream->Write(m_Rotation.y);
+        outBitStream->Write(m_Rotation.z);
+        outBitStream->Write(m_Rotation.w);
+        outBitStream->Write(m_IsOnGround);
+        outBitStream->Write(m_DirtyVelocity);
+        if (m_DirtyVelocity) {
+            outBitStream->Write(m_Velocity.x);
+            outBitStream->Write(m_Velocity.y);
+            outBitStream->Write(m_Velocity.z);
+        }
+        outBitStream->Write(m_DirtyAngularVelocity);
+        if (m_DirtyAngularVelocity) {
+            outBitStream->Write(m_AngularVelocity.x);
+            outBitStream->Write(m_AngularVelocity.y);
+            outBitStream->Write(m_AngularVelocity.z);
+        }
+        outBitStream->Write0(); // platform
+    }
 }
 
 void ControllablePhysicsComponent::LoadFromXML(tinyxml2::XMLDocument* doc) {

@@ -765,49 +765,51 @@ void InventoryComponent::UpdateXml(tinyxml2::XMLDocument* document)
 	}
 }
 
-void InventoryComponent::Serialize(RakNet::BitStream* outBitStream, const bool bIsInitialUpdate, unsigned& flags)
-{
-	if (bIsInitialUpdate || m_Dirty)
-	{
-		outBitStream->Write(true);
-		
-		outBitStream->Write<uint32_t>(m_Equipped.size());
+void InventoryComponent::Serialize(RakNet::BitStream* outBitStream,
+                                   const bool bIsInitialUpdate, unsigned& flags) {
+    // Section 1: All items (objectID + LOT + subkey per item)
+    if (bIsInitialUpdate || m_Dirty) {
+        outBitStream->Write(true);
 
-		for (const auto& pair : m_Equipped)
-		{
-			const auto item = pair.second;
-			
-			if (bIsInitialUpdate)
-			{
-				AddItemSkills(item.lot);
-			}
+        // Count ALL items across all inventories
+        uint32_t totalItems = 0;
+        for (const auto& inv : m_Inventories) {
+            totalItems += inv.second->GetItems().size();
+        }
+        outBitStream->Write<uint32_t>(totalItems);
 
-			outBitStream->Write(item.id);
-            outBitStream->Write(item.lot);
-            
-            outBitStream->Write0();
-            
-            outBitStream->Write(item.count > 0);
-            if (item.count > 0) outBitStream->Write(item.count);
-            
-            outBitStream->Write(item.slot != 0);
-            if (item.slot != 0) outBitStream->Write<uint16_t>(item.slot);
-            
-            outBitStream->Write0();
-            
-            outBitStream->Write0(); //TODO: This is supposed to be true and write the assemblyPartLOTs when they're present.
-            
-            outBitStream->Write1();
-		}
+        for (const auto& inv : m_Inventories) {
+            for (const auto& itemPair : inv.second->GetItems()) {
+                auto* item = itemPair.second;
+                outBitStream->Write<uint64_t>(item->GetId());     // objectID (64 bits)
+                outBitStream->Write<uint32_t>(item->GetLot());    // LOT (32 bits)
+                outBitStream->Write<uint64_t>(item->GetSubKey()); // subkey (64 bits)
+            }
+        }
+        m_Dirty = false;
+    } else {
+        outBitStream->Write(false);
+    }
 
-		m_Dirty = false;
-	}
-	else
-	{
-		outBitStream->Write(false);
-	}
-	
-	outBitStream->Write(false);
+    // Section 2: Equipped items (objectID + position(3 floats) + rotation(4 floats))
+    if (bIsInitialUpdate || m_Dirty) {
+        outBitStream->Write(true);
+        outBitStream->Write<uint32_t>(m_Equipped.size());
+
+        for (const auto& pair : m_Equipped) {
+            const auto& item = pair.second;
+            outBitStream->Write<uint64_t>(item.id); // objectID (64 bits)
+            outBitStream->Write<float>(0.0f);       // pos.x (32 bits)
+            outBitStream->Write<float>(0.0f);       // pos.y (32 bits)
+            outBitStream->Write<float>(0.0f);       // pos.z (32 bits)
+            outBitStream->Write<float>(0.0f);       // rot.x (32 bits)
+            outBitStream->Write<float>(0.0f);       // rot.y (32 bits)
+            outBitStream->Write<float>(0.0f);       // rot.z (32 bits)
+            outBitStream->Write<float>(1.0f);       // rot.w (32 bits)
+        }
+    } else {
+        outBitStream->Write(false);
+    }
 }
 
 void InventoryComponent::ResetFlags()

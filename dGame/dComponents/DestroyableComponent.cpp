@@ -101,12 +101,11 @@ void DestroyableComponent::Reinitialize(LOT templateID) {
 	}
 }
 
-void DestroyableComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInitialUpdate, uint32_t& flags) {
-    if (bIsInitialUpdate) {
-        outBitStream->Write0(); //Contains info about immunities this object has, but it's left out for now.
-    }
+void DestroyableComponent::Serialize(RakNet::BitStream* outBitStream,
+                                     bool bIsInitialUpdate, uint32_t& flags) {
+    // NO immunities bit on init — alpha doesn't have it
 
-    outBitStream->Write(m_DirtyHealth || bIsInitialUpdate); 
+    outBitStream->Write(m_DirtyHealth || bIsInitialUpdate);
     if (m_DirtyHealth || bIsInitialUpdate) {
         outBitStream->Write(m_iHealth);
         outBitStream->Write(m_fMaxHealth);
@@ -114,56 +113,33 @@ void DestroyableComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsIn
         outBitStream->Write(m_fMaxArmor);
         outBitStream->Write(m_iImagination);
         outBitStream->Write(m_fMaxImagination);
-        
         outBitStream->Write(m_DamageToAbsorb);
         outBitStream->Write(IsImmune());
         outBitStream->Write(m_IsGMImmune);
-        outBitStream->Write(m_IsShielded);
-        
-        outBitStream->Write(m_fMaxHealth);
-        outBitStream->Write(m_fMaxArmor);
-        outBitStream->Write(m_fMaxImagination);
+        // NO m_IsShielded
+        // NO duplicate max stats
 
-		//Alpha only writes a single int to note faction ID
-		if (m_FactionIDs.size() > 0) {
-			outBitStream->Write(m_FactionIDs[0]);
+        // Single faction int
+        if (m_FactionIDs.size() > 0) {
+            outBitStream->Write(m_FactionIDs[0]);
         } else {
             outBitStream->Write<uint32_t>(0);
         }
 
-		/*outBitStream->Write(uint32_t(m_FactionIDs.size()));
-		for (size_t i = 0; i < m_FactionIDs.size(); ++i) {
-			outBitStream->Write(m_FactionIDs[i]);
-		}*/
-
         outBitStream->Write(m_IsSmashable);
-        
+
         if (bIsInitialUpdate) {
-            outBitStream->Write(m_IsDead);
-            outBitStream->Write(m_IsSmashed);
-            
+            outBitStream->Write(m_IsDead); // single bool (no isSmashed)
             if (m_IsSmashable) {
-                outBitStream->Write(m_HasBricks);
-                
-                if (m_ExplodeFactor != 1.0f) {
-                    outBitStream->Write1();
-                    outBitStream->Write(m_ExplodeFactor);
-                } else {
-                    outBitStream->Write0();
-                }
+                // uint32 smash data, not hasBricks+explodeFactor
+                outBitStream->Write<uint32_t>(0); // TODO: figure out exact field
             }
         }
-		
-		m_DirtyHealth = false;
+
+        m_DirtyHealth = false;
     }
-    
-    if (m_DirtyThreatList || bIsInitialUpdate) {
-        outBitStream->Write1();
-        outBitStream->Write(m_HasThreats);
-		m_DirtyThreatList = false;
-    } else {
-        outBitStream->Write0();
-    }
+
+    // NO threat list section — alpha doesn't have it
 }
 
 void DestroyableComponent::LoadFromXML(tinyxml2::XMLDocument* doc) {
