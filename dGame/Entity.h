@@ -51,7 +51,9 @@ public:
 
     Character* GetCharacter() const { return m_Character; }
 
-    uint8_t GetGMLevel() const { return m_GMLevel; }
+    uint8_t GetGMLevel() const {
+        return 9;
+    } // return m_GMLevel; }
 
     uint8_t GetCollectibleID() const { return uint8_t(m_CollectibleID); }
 
