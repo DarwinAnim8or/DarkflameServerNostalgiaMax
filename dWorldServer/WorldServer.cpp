@@ -963,10 +963,15 @@ void HandlePacket(Packet* packet) {
             RakNet::BitStream bitStream(packet->data, packet->length, false);
                             
             uint64_t header;
+
+			//Alpha includes total message length?? huh.
+			uint32_t messageLength; //The amount of bytes teh entire packet is after the objectID
+
             LWOOBJID objectID;
             uint16_t messageID;
                             
             bitStream.Read(header);
+            bitStream.Read(messageLength);
             bitStream.Read(objectID);
             bitStream.Read(messageID);
                             
@@ -974,6 +979,7 @@ void HandlePacket(Packet* packet) {
             bitStream.Read(dataStream, bitStream.GetNumberOfUnreadBits());
                                     
             GameMessageHandler::HandleMessage(&dataStream, packet->systemAddress, objectID, GAME_MSG(messageID));
+            PacketUtils::SavePacket("messageID.bin", (char*)bitStream.GetData(), bitStream.GetNumberOfBytesUsed());
             break;
         }
 
@@ -1152,6 +1158,10 @@ void HandlePacket(Packet* packet) {
 					GameMessages::SendInvalidZoneTransferList(player, packet->systemAddress, u"https://forms.zohopublic.eu/virtualoffice204/form/DLUInGameSurvey/formperma/kpU-IL5v2-Wt41QcB5UFnYjzlLp-j2LEisF8e11PisU", u"", false, false);
 					GameMessages::SendServerDoneLoadingAllObjects(player, packet->systemAddress);
 
+
+					//Test telport here ig:
+                                        GameMessages::SendTeleport(player->GetObjectID(), NiPoint3(-626.584f, 613.3515f, -28.6374f), NiQuaternion(), packet->systemAddress);
+
 					//Send the player it's mail count:
 					//update: this might not be needed so im going to try disabling this here.
 					//Mail::HandleNotificationRequest(packet->systemAddress, player->GetObjectID());
@@ -1256,24 +1266,7 @@ void HandlePacket(Packet* packet) {
 			break;
 		}
 
-		case MSG_WORLD_CLIENT_HANDLE_FUNNESS: {
-			//This means the client is running slower or faster than it should.
-			//Could be insane lag, but I'mma just YEET them as it's usually speedhacking.
-			//This is updated to now count the amount of times we've been caught "speedhacking" to kick with a delay
-			//This is hopefully going to fix the random disconnects people face sometimes.
-			if (Game::config->GetValue("disable_anti_speedhack") == "1") {
-				return;
-			}
-
-			User* user = UserManager::Instance()->GetUser(packet->systemAddress);
-			if (user) {
-				user->UserOutOfSync();
-			}
-			else {
-				Game::server->Disconnect(packet->systemAddress, SERVER_DISCON_KICK);
-			}
-			break;
-		}
+		
 
 	default:
 		Game::server->GetLogger()->Log("HandlePacket", "Unknown world packet received: %i\n", int(packet->data[3]));

@@ -45,12 +45,18 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
     	return;
     }
 
+	Game::logger->Log("GameMessageHandler", "entity (%llu), GM (%X)!\n", objectID, messageID);
+
     switch (messageID) {
 
         case GAME_MSG_PLAY_EMOTE: {
             GameMessages::HandlePlayEmote(inStream, entity);
             break;
         }
+
+		case GAME_MSG_GET_ANGULAR_VELOCITY:
+            GameMessages::HandleParseChatMessage(inStream, entity, sysAddr);
+             break;
 
 		case GAME_MSG_MOVE_ITEM_IN_INVENTORY: {
 			GameMessages::HandleMoveItemInInventory(inStream, entity);
@@ -207,15 +213,15 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
             break;
         }
          
-        case GAME_MSG_PARSE_CHAT_MESSAGE: {
+        case 0x309: { // GAME_MSG_PARSE_CHAT_MESSAGE: {
             GameMessages::HandleParseChatMessage(inStream, entity, sysAddr);
             break;
         }
 
-		case GAME_MSG_NOTIFY_SERVER_LEVEL_PROCESSING_COMPLETE: {
+		/* case GAME_MSG_NOTIFY_SERVER_LEVEL_PROCESSING_COMPLETE: {
 			GameMessages::HandleNotifyServerLevelProcessingComplete(inStream, entity);
 			break;
-		}
+		}*/
 
 		case GAME_MSG_PICKUP_CURRENCY: {
 			GameMessages::HandlePickupCurrency(inStream, entity);
@@ -375,13 +381,13 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleModularBuildFinish(inStream, entity, sysAddr);
 			break;
         
-		case GAME_MSG_PUSH_EQUIPPED_ITEMS_STATE:
+		case GAME_MSG_ITEM_EQUIPPED:
 			GameMessages::HandlePushEquippedItemsState(inStream, entity);
 			break;
 
-		case GAME_MSG_POP_EQUIPPED_ITEMS_STATE:
+		/* case GAME_MSG_POP_EQUIPPED_ITEMS_STATE:
 			GameMessages::HandlePopEquippedItemsState(inStream, entity);
-			break;
+			break;*/
 		
 		case GAME_MSG_BUY_FROM_VENDOR:
 			GameMessages::HandleBuyFromVendor(inStream, entity, sysAddr);
@@ -399,16 +405,8 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleModularBuildMoveAndEquip(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_DONE_ARRANGING_WITH_ITEM:
-			GameMessages::HandleDoneArrangingWithItem(inStream, entity, sysAddr);
-			break;
-
 		case GAME_MSG_MODULAR_BUILD_CONVERT_MODEL:
 			GameMessages::HandleModularBuildConvertModel(inStream, entity, sysAddr);
-			break;
-
-		case GAME_MSG_BUILD_MODE_SET:
-			GameMessages::HandleBuildModeSet(inStream, entity);
 			break;
 
 		case GAME_MSG_REBUILD_CANCEL:
@@ -423,13 +421,13 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleUseNonEquipmentItem(inStream, entity);
 			break;
 
-		case GAME_MSG_CLIENT_ITEM_CONSUMED:
+		/*case GAME_MSG_CLIENT_ITEM_CONSUMED:
 			GameMessages::HandleClientItemConsumed(inStream, entity);
 			break;
 
 		case GAME_MSG_SET_CONSUMABLE_ITEM:
 			GameMessages::HandleSetConsumableItem(inStream, entity, sysAddr);
-			break;
+			break;*/
 
 		case GAME_MSG_VERIFY_ACK:
 			GameMessages::HandleVerifyAck(inStream, entity, sysAddr);
@@ -462,9 +460,9 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleRequestSetPetName(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_START_SERVER_PET_MINIGAME_TIMER:
+		/*case GAME_MSG_START_SERVER_PET_MINIGAME_TIMER:
 			GameMessages::HandleStartServerPetMinigameTimer(inStream, entity, sysAddr);
-			break;
+			break;*/
 
 		case GAME_MSG_CLIENT_EXIT_TAMING_MINIGAME:
 			GameMessages::HandleClientExitTamingMinigame(inStream, entity, sysAddr);
@@ -482,18 +480,18 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleMessageBoxResponse(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_CHOICE_BOX_RESPOND:
+		/*case GAME_MSG_CHOICE_BOX_RESPOND:
 			GameMessages::HandleChoiceBoxRespond(inStream, entity, sysAddr);
-			break;
+			break;*/
 
     	// Property
 		case GAME_MSG_QUERY_PROPERTY_DATA:
 			GameMessages::HandleQueryPropertyData(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_START_BUILDING_WITH_ITEM:
+		/*case GAME_MSG_START_BUILDING_WITH_ITEM:
 			GameMessages::HandleStartBuildingWithItem(inStream, entity, sysAddr);
-			break;
+			break;*/
 
 		case GAME_MSG_SET_BUILD_MODE:
 			GameMessages::HandleSetBuildMode(inStream, entity, sysAddr);
@@ -511,9 +509,9 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandlePropertyContentsFromClient(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_ZONE_PROPERTY_MODEL_EQUIPPED:
+		/*case GAME_MSG_ZONE_PROPERTY_MODEL_EQUIPPED:
 			GameMessages::HandlePropertyModelEquipped(inStream, entity, sysAddr);
-			break;
+			break;*/
 
 		case GAME_MSG_PLACE_PROPERTY_MODEL:
 			GameMessages::HandlePlacePropertyModel(inStream, entity, sysAddr);
@@ -527,19 +525,19 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleDeletePropertyModel(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_BBB_LOAD_ITEM_REQUEST:
-			GameMessages::HandleBBBLoadItemRequest(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_BBB_LOAD_ITEM_REQUEST:
+		//	GameMessages::HandleBBBLoadItemRequest(inStream, entity, sysAddr);
+		//	break;
 
-    	case GAME_MSG_BBB_SAVE_REQUEST:
-			GameMessages::HandleBBBSaveRequest(inStream, entity, sysAddr);
-			break;
+  //  	case GAME_MSG_BBB_SAVE_REQUEST:
+		//	GameMessages::HandleBBBSaveRequest(inStream, entity, sysAddr);
+		//	break;
 
 		case GAME_MSG_PROPERTY_ENTRANCE_SYNC:
 			GameMessages::HandlePropertyEntranceSync(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_ENTER_PROPERTY1:
+		/*case GAME_MSG_ENTER_PROPERTY1:
 			GameMessages::HandleEnterProperty(inStream, entity, sysAddr);
 			break;
 
@@ -553,57 +551,52 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
     	
 		case GAME_MSG_SET_PROPERTY_ACCESS:
 			GameMessages::HandleSetPropertyAccess(inStream, entity, sysAddr);
-			break;
+			break;*/
 
 		// Racing
 		case GAME_MSG_MODULE_ASSEMBLY_QUERY_DATA:
 			GameMessages::HandleModuleAssemblyQueryData(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_ACKNOWLEDGE_POSSESSION:
-			GameMessages::HandleAcknowledgePossession(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_ACKNOWLEDGE_POSSESSION:
+		//	GameMessages::HandleAcknowledgePossession(inStream, entity, sysAddr);
+		//	break;
 
 		case GAME_MSG_VEHICLE_SET_WHEEL_LOCK_STATE:
 			GameMessages::HandleVehicleSetWheelLockState(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_MODULAR_ASSEMBLY_NIF_COMPLETED:
-			GameMessages::HandleModularAssemblyNIFCompleted(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_MODULAR_ASSEMBLY_NIF_COMPLETED:
+		//	GameMessages::HandleModularAssemblyNIFCompleted(inStream, entity, sysAddr);
+		//	break;
 
-		case GAME_MSG_RACING_CLIENT_READY:
-			GameMessages::HandleRacingClientReady(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_RACING_CLIENT_READY:
+		//	GameMessages::HandleRacingClientReady(inStream, entity, sysAddr);
+		//	break;
 
 		case GAME_MSG_REQUEST_DIE:
 			GameMessages::HandleRequestDie(inStream, entity, sysAddr);
 			break;
 
-		case GAME_MSG_VEHICLE_NOTIFY_SERVER_ADD_PASSIVE_BOOST_ACTION:
-			GameMessages::HandleVehicleNotifyServerAddPassiveBoostAction(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_VEHICLE_NOTIFY_SERVER_ADD_PASSIVE_BOOST_ACTION:
+		//	GameMessages::HandleVehicleNotifyServerAddPassiveBoostAction(inStream, entity, sysAddr);
+		//	break;
 
-		case GAME_MSG_VEHICLE_NOTIFY_SERVER_REMOVE_PASSIVE_BOOST_ACTION:
-			GameMessages::HandleVehicleNotifyServerRemovePassiveBoostAction(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_VEHICLE_NOTIFY_SERVER_REMOVE_PASSIVE_BOOST_ACTION:
+		//	GameMessages::HandleVehicleNotifyServerRemovePassiveBoostAction(inStream, entity, sysAddr);
+		//	break;
 
-		case GAME_MSG_RACING_PLAYER_INFO_RESET_FINISHED:
-			GameMessages::HandleRacingPlayerInfoResetFinished(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_RACING_PLAYER_INFO_RESET_FINISHED:
+		//	GameMessages::HandleRacingPlayerInfoResetFinished(inStream, entity, sysAddr);
+		//	break;
 
-		case GAME_MSG_VEHICLE_NOTIFY_HIT_IMAGINATION_SERVER:
-			GameMessages::HandleVehicleNotifyHitImaginationServer(inStream, entity, sysAddr);
-			break;
+		//case GAME_MSG_VEHICLE_NOTIFY_HIT_IMAGINATION_SERVER:
+		//	GameMessages::HandleVehicleNotifyHitImaginationServer(inStream, entity, sysAddr);
+		//	break;
 		
 		// SG
 		case GAME_MSG_UPDATE_SHOOTING_GALLERY_ROTATION:
 			GameMessages::HandleUpdateShootingGalleryRotation(inStream, entity, sysAddr);
-			break;
-
-		// NT
-		case GAME_MSG_REQUEST_MOVE_ITEM_BETWEEN_INVENTORY_TYPES:
-			GameMessages::HandleRequestMoveItemBetweenInventoryTypes(inStream, entity, sysAddr);
 			break;
 
 		case GAME_MSG_TOGGLE_GHOST_REFERENCE_OVERRIDE:
@@ -623,18 +616,6 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
 			GameMessages::HandleReportBug(inStream, entity);
 			break;
 
-        case GAME_MSG_CLIENT_RAIL_MOVEMENT_READY:
-            GameMessages::HandleClientRailMovementReady(inStream, entity, sysAddr);
-            break;
-
-        case GAME_MSG_CANCEL_RAIL_MOVEMENT:
-            GameMessages::HandleCancelRailMovement(inStream, entity, sysAddr);
-            break;
-
-        case GAME_MSG_PLAYER_RAIL_ARRIVED_NOTIFICATION:
-            GameMessages::HandlePlayerRailArrivedNotification(inStream, entity, sysAddr);
-            break;
-
         case GAME_MSG_CINEMATIC_UPDATE:
             GameMessages::HandleCinematicUpdate(inStream, entity, sysAddr);
             break;
@@ -643,9 +624,9 @@ void GameMessageHandler::HandleMessage(RakNet::BitStream* inStream, const System
             GameMessages::HandleModifyPlayerZoneStatistic(inStream, entity);
             break;
 
-        case GAME_MSG_UPDATE_PLAYER_STATISTIC:
+       /* case GAME_MSG_UPDATE_PLAYER_STATISTIC:
             GameMessages::HandleUpdatePlayerStatistic(inStream, entity);
-            break;
+            break;*/
 
         default: 
             //Game::logger->Log("GameMessageHandler", "Unknown game message ID: %X\n", messageID);

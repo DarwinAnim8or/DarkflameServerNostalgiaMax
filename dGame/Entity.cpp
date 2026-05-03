@@ -854,301 +854,337 @@ void Entity::SetGMLevel(uint8_t value) {
 }
 
 void Entity::WriteBaseReplicaData(RakNet::BitStream* outBitStream, eReplicaPacketType packetType) {
-	if (packetType == PACKET_TYPE_CONSTRUCTION) {
-		outBitStream->Write(m_ObjectID);
-		outBitStream->Write(m_TemplateID);
+    if (packetType == PACKET_TYPE_CONSTRUCTION) {
+        outBitStream->Write(m_ObjectID);   // field 1: uint64
+        outBitStream->Write(m_TemplateID); // field 2: int32
 
-		if (IsPlayer()) {
-			std::string name = m_Character != nullptr ? m_Character->GetName() : "Invalid";
-			outBitStream->Write<uint8_t>(uint8_t(name.size()));
+        // field 3+4: name (uint8 len + wchar_t[])
+        if (IsPlayer()) {
+            std::string name = m_Character ? m_Character->GetName() : "Invalid";
+            outBitStream->Write<uint8_t>(uint8_t(name.size()));
+            for (size_t i = 0; i < name.size(); ++i)
+                outBitStream->Write<uint16_t>(name[i]);
+        } else {
+            const auto& name = GetVar<std::string>(u"npcName");
+            outBitStream->Write<uint8_t>(uint8_t(name.size()));
+            for (size_t i = 0; i < name.size(); ++i)
+                outBitStream->Write<uint16_t>(name[i]);
+        }
 
-			for (size_t i = 0; i < name.size(); ++i) {
-				outBitStream->Write<uint16_t>(name[i]);
-			}
-		} else {
-			const auto& name = GetVar<std::string>(u"npcName");
-			outBitStream->Write<uint8_t>(uint8_t(name.size()));
+        outBitStream->Write<uint32_t>(0); // field 5: timeSinceCreated
+        outBitStream->Write0();           // field 6: extraData flag (no data)
+        outBitStream->Write0();           // field 7: subkey flag (no data)
+        outBitStream->Write0();           // field 8: trigger_id (just a bool)
 
-			for (size_t i = 0; i < name.size(); ++i) {
-				outBitStream->Write<uint16_t>(name[i]);
-			}
-		}
+        // field 9: spawnerid (flag + opt uint64)
+        if (m_ParentEntity != nullptr || m_SpawnerID != 0) {
+            outBitStream->Write1();
+            if (m_ParentEntity != nullptr)
+                outBitStream->Write(GeneralUtils::SetBit(m_ParentEntity->GetObjectID(), OBJECT_BIT_CLIENT));
+            else if (m_Spawner != nullptr && m_Spawner->m_Info.isNetwork)
+                outBitStream->Write(m_SpawnerID);
+            else
+                outBitStream->Write(GeneralUtils::SetBit(m_SpawnerID, OBJECT_BIT_CLIENT));
+        } else {
+            outBitStream->Write0();
+        }
 
-		outBitStream->Write<uint32_t>(0); //Time since created on server
+        // field 10: spawner_node_id (flag + opt uint32)
+        outBitStream->Write(m_HasSpawnerNodeID);
+        if (m_HasSpawnerNodeID)
+            outBitStream->Write(m_SpawnerNodeID);
 
-		const auto& syncLDF = GetVar<std::vector<std::u16string>>(u"syncLDF");
+        // field 11: optional float (scale)
+        if (m_Scale == 1.0f || m_Scale == 0.0f)
+            outBitStream->Write0();
+        else {
+            outBitStream->Write1();
+            outBitStream->Write(m_Scale);
+        }
 
-		//limiting it to lot 14 right now
-		if (m_Settings.size() > 0 && m_TemplateID == 14) {
-			outBitStream->Write1(); //ldf data
+        // field 12: objectWorldState — 32 bits UNCONDITIONAL (NOT a flag bit!)
+        outBitStream->Write<uint32_t>(0);
 
-			RakNet::BitStream settingStream;
-			settingStream.Write<uint32_t>(m_Settings.size());
+        // NO GM level — alpha doesn't read it here
 
-			for (LDFBaseData* data : m_Settings) {
-				if (data) {
-					data->WriteToPacket(&settingStream);
-				}
-			}
-
-			outBitStream->Write(settingStream.GetNumberOfBytesUsed() + 1);
-			outBitStream->Write<uint8_t>(0); //no compression used
-			outBitStream->Write(settingStream);
-		} else if (!syncLDF.empty()) {
-			std::vector<LDFBaseData*> ldfData;
-
-			for (const auto& data : syncLDF) {
-				ldfData.push_back(GetVarData(data));
-			}
-
-			outBitStream->Write1(); //ldf data
-
-			RakNet::BitStream settingStream;
-			settingStream.Write<uint32_t>(ldfData.size());
-
-			for (LDFBaseData* data : ldfData) {
-				if (data) {
-					data->WriteToPacket(&settingStream);
-				}
-			}
-
-			outBitStream->Write(settingStream.GetNumberOfBytesUsed() + 1);
-			outBitStream->Write<uint8_t>(0); //no compression used
-			outBitStream->Write(settingStream);
-		} else {
-			outBitStream->Write0(); //No ldf data 
-		}
-
-		if (m_Trigger != nullptr && m_Trigger->events.size() > 0) {
-			outBitStream->Write1();
-		} else {
-			outBitStream->Write0();
-		}
-
-		if (m_ParentEntity != nullptr || m_SpawnerID != 0) {
-			outBitStream->Write1();
-			if (m_ParentEntity != nullptr) outBitStream->Write(GeneralUtils::SetBit(m_ParentEntity->GetObjectID(), OBJECT_BIT_CLIENT));
-			else if (m_Spawner != nullptr && m_Spawner->m_Info.isNetwork) outBitStream->Write(m_SpawnerID);
-			else outBitStream->Write(GeneralUtils::SetBit(m_SpawnerID, OBJECT_BIT_CLIENT));
-		} else outBitStream->Write0();
-
-		outBitStream->Write(m_HasSpawnerNodeID);
-		if (m_HasSpawnerNodeID) outBitStream->Write(m_SpawnerNodeID);
-
-		//outBitStream->Write0(); //Spawner node id
-
-		if (m_Scale == 1.0f || m_Scale == 0.0f) outBitStream->Write0();
-		else {
-			outBitStream->Write1();
-			outBitStream->Write(m_Scale);
-		}
-
-		outBitStream->Write0(); //ObjectWorldState
-
-		if (m_GMLevel != 0) {
-			outBitStream->Write1();
-			outBitStream->Write(m_GMLevel);
-		} else outBitStream->Write0(); //No GM Level
-	}
-	outBitStream->Write((m_ParentEntity != nullptr || m_ChildEntities.size() > 0));
-	if (m_ParentEntity || m_ChildEntities.size() > 0) {
-		outBitStream->Write(m_ParentEntity != nullptr);
-		if (m_ParentEntity) {
-			outBitStream->Write(m_ParentEntity->GetObjectID());
-			outBitStream->Write0();
-		}
-		outBitStream->Write(m_ChildEntities.size() > 0);
-		if (m_ChildEntities.size() > 0) {
-			outBitStream->Write((uint16_t)m_ChildEntities.size());
-			for (Entity* child : m_ChildEntities) {
-				outBitStream->Write((uint64_t)child->GetObjectID());
-			}
-		}
-	}
+        // Parent/child (part of LWOGameObject::Unserialize pre-component section)
+        outBitStream->Write((m_ParentEntity != nullptr || m_ChildEntities.size() > 0));
+        if (m_ParentEntity || m_ChildEntities.size() > 0) {
+            outBitStream->Write(m_ParentEntity != nullptr);
+            if (m_ParentEntity) {
+                outBitStream->Write(m_ParentEntity->GetObjectID());
+                outBitStream->Write0();
+            }
+            outBitStream->Write(m_ChildEntities.size() > 0);
+            if (m_ChildEntities.size() > 0) {
+                outBitStream->Write((uint16_t)m_ChildEntities.size());
+                for (Entity* child : m_ChildEntities)
+                    outBitStream->Write((uint64_t)child->GetObjectID());
+            }
+        }
+    }
 }
 
 void Entity::WriteComponents(RakNet::BitStream* outBitStream, eReplicaPacketType packetType) {
+    bool bIsInitialUpdate = (packetType == PACKET_TYPE_CONSTRUCTION);
+    unsigned int flags = 0;
 
-	/**
-	 * This has to be done in a specific order.
-	 */
+    // --- Physics (only one will exist per entity) ---
+    ControllablePhysicsComponent* controllablePhysicsComponent;
+    if (TryGetComponent(COMPONENT_TYPE_CONTROLLABLE_PHYSICS, controllablePhysicsComponent)) {
+        controllablePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	bool destroyableSerialized = false;
-	bool bIsInitialUpdate = false;
-	if (packetType == PACKET_TYPE_CONSTRUCTION) bIsInitialUpdate = true;
-	unsigned int flags = 0;
+    SimplePhysicsComponent* simplePhysicsComponent;
+    if (TryGetComponent(COMPONENT_TYPE_SIMPLE_PHYSICS, simplePhysicsComponent)) {
+        simplePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	PossessableComponent* possessableComponent;
-	if (TryGetComponent(COMPONENT_TYPE_POSSESSABLE, possessableComponent)) {
-		possessableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    RigidbodyPhantomPhysicsComponent* rigidbodyPhantomPhysics;
+    if (TryGetComponent(COMPONENT_TYPE_RIGID_BODY_PHANTOM_PHYSICS, rigidbodyPhantomPhysics)) {
+        rigidbodyPhantomPhysics->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	ModuleAssemblyComponent* moduleAssemblyComponent;
-	if (TryGetComponent(COMPONENT_TYPE_MODULE_ASSEMBLY, moduleAssemblyComponent)) {
-		moduleAssemblyComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    VehiclePhysicsComponent* vehiclePhysicsComponent;
+    if (TryGetComponent(COMPONENT_TYPE_VEHICLE_PHYSICS, vehiclePhysicsComponent)) {
+        vehiclePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	ControllablePhysicsComponent* controllablePhysicsComponent;
-	if (TryGetComponent(COMPONENT_TYPE_CONTROLLABLE_PHYSICS, controllablePhysicsComponent)) {
-		controllablePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    PhantomPhysicsComponent* phantomPhysicsComponent;
+    if (TryGetComponent(COMPONENT_TYPE_PHANTOM_PHYSICS, phantomPhysicsComponent)) {
+        phantomPhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	SimplePhysicsComponent* simplePhysicsComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SIMPLE_PHYSICS, simplePhysicsComponent)) {
-		simplePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    // --- Destroyable (no Buff wrapper — alpha has no BuffComponent) ---
+    DestroyableComponent* destroyableComponent;
+    if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent)) {
+        destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	RigidbodyPhantomPhysicsComponent* rigidbodyPhantomPhysics;
-	if (TryGetComponent(COMPONENT_TYPE_RIGID_BODY_PHANTOM_PHYSICS, rigidbodyPhantomPhysics)) {
-		rigidbodyPhantomPhysics->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    // --- Character ---
+    CharacterComponent* characterComponent;
+    if (TryGetComponent(COMPONENT_TYPE_CHARACTER, characterComponent)) {
+        characterComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	VehiclePhysicsComponent* vehiclePhysicsComponent;
-	if (TryGetComponent(COMPONENT_TYPE_VEHICLE_PHYSICS, vehiclePhysicsComponent)) {
-		vehiclePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    // --- Inventory ---
+    InventoryComponent* inventoryComponent;
+    if (TryGetComponent(COMPONENT_TYPE_INVENTORY, inventoryComponent)) {
+        inventoryComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	PhantomPhysicsComponent* phantomPhysicsComponent;
-	if (TryGetComponent(COMPONENT_TYPE_PHANTOM_PHYSICS, phantomPhysicsComponent)) {
-		phantomPhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    // --- Rebuild (with Destroyable if not yet serialized) ---
+    RebuildComponent* rebuildComponent;
+    if (TryGetComponent(COMPONENT_TYPE_REBUILD, rebuildComponent)) {
+        rebuildComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	SoundTriggerComponent* soundTriggerComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SOUND_TRIGGER, soundTriggerComponent)) {
-		soundTriggerComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
+    // --- MovingPlatform ---
+    MovingPlatformComponent* movingPlatformComponent;
+    if (TryGetComponent(COMPONENT_TYPE_MOVING_PLATFORM, movingPlatformComponent)) {
+        movingPlatformComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	BuffComponent* buffComponent;
-	if (TryGetComponent(COMPONENT_TYPE_BUFF, buffComponent)) {
-		buffComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    //// --- ShootingGallery ---
+    //ShootingGalleryComponent* shootingGalleryComponent;
+    //if (TryGetComponent(COMPONENT_TYPE_SHOOTING_GALLERY, shootingGalleryComponent)) {
+    //    shootingGalleryComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    //}
 
-		DestroyableComponent* destroyableComponent;
-		if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent)) {
-			destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-		}
-		destroyableSerialized = true;
-	}
+    // --- Render/FX (MUST be last serialized component) ---
+    RenderComponent* renderComponent;
+    if (TryGetComponent(COMPONENT_TYPE_RENDER, renderComponent)) {
+        renderComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+    }
 
-	if (HasComponent(COMPONENT_TYPE_COLLECTIBLE)) {
-		DestroyableComponent* destroyableComponent;
-		if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent) && !destroyableSerialized) {
-			destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-		}
-		destroyableSerialized = true;
-		outBitStream->Write(m_CollectibleID); // Collectable component
-	}
-
-	PetComponent* petComponent;
-	if (TryGetComponent(COMPONENT_TYPE_PET, petComponent)) {
-		petComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	CharacterComponent* characterComponent;
-	if (TryGetComponent(COMPONENT_TYPE_CHARACTER, characterComponent)) {
-		characterComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	if (HasComponent(COMPONENT_TYPE_ITEM)) {
-		outBitStream->Write0();
-	}
-
-	InventoryComponent* inventoryComponent;
-	if (TryGetComponent(COMPONENT_TYPE_INVENTORY, inventoryComponent)) {
-		inventoryComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	ScriptComponent* scriptComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SCRIPT, scriptComponent)) {
-		scriptComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	SkillComponent* skillComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SKILL, skillComponent)) {
-		skillComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	BaseCombatAIComponent* baseCombatAiComponent;
-	if (TryGetComponent(COMPONENT_TYPE_BASE_COMBAT_AI, baseCombatAiComponent)) {
-		baseCombatAiComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	RebuildComponent* rebuildComponent;
-	if (TryGetComponent(COMPONENT_TYPE_REBUILD, rebuildComponent)) {
-		DestroyableComponent* destroyableComponent;
-		if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent) && !destroyableSerialized) {
-			destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-		}
-		destroyableSerialized = true;
-		rebuildComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	MovingPlatformComponent* movingPlatformComponent;
-	if (TryGetComponent(COMPONENT_TYPE_MOVING_PLATFORM, movingPlatformComponent)) {
-		movingPlatformComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	SwitchComponent* switchComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SWITCH, switchComponent)) {
-		switchComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	VendorComponent* vendorComponent;
-	if (TryGetComponent(COMPONENT_TYPE_VENDOR, vendorComponent)) {
-		vendorComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	BouncerComponent* bouncerComponent;
-	if (TryGetComponent(COMPONENT_TYPE_BOUNCER, bouncerComponent)) {
-		bouncerComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	ScriptedActivityComponent* scriptedActivityComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SCRIPTED_ACTIVITY, scriptedActivityComponent)) {
-		scriptedActivityComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	ShootingGalleryComponent* shootingGalleryComponent;
-	if (TryGetComponent(COMPONENT_TYPE_SHOOTING_GALLERY, shootingGalleryComponent)) {
-		shootingGalleryComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	RacingControlComponent* racingControlComponent;
-	if (TryGetComponent(COMPONENT_TYPE_RACING_CONTROL, racingControlComponent)) {
-		racingControlComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	LUPExhibitComponent* lupExhibitComponent;
-	if (TryGetComponent(COMPONENT_TYPE_EXHIBIT, lupExhibitComponent)) {
-		lupExhibitComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	ModelComponent* modelComponent;
-	if (TryGetComponent(COMPONENT_TYPE_MODEL, modelComponent)) {
-		modelComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	RenderComponent* renderComponent;
-	if (TryGetComponent(COMPONENT_TYPE_RENDER, renderComponent)) {
-		renderComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	if (HasComponent(COMPONENT_TYPE_ZONE_CONTROL)) {
-		outBitStream->Write<uint32_t>(0x40000000);
-	}
-
-	PossessorComponent* possessorComponent;
-	if (TryGetComponent(COMPONENT_TYPE_POSSESSOR, possessorComponent)) {
-		possessorComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
-	}
-
-	/*
-	if (m_Trigger != nullptr)
-	{
-		outBitStream->Write1();
-		outBitStream->Write(m_Trigger->id);
-	}
-	*/
+    // DO NOT serialize: Possessable, ModuleAssembly, SoundTrigger, Buff,
+    // Collectible, Pet, Item, Script, Skill, BaseCombatAI, Switch, Vendor,
+    // Bouncer, ScriptedActivity, RacingControl, Exhibit, Model, ZoneControl,
+    // Possessor — none of these have Unserialize in the alpha.
 }
+
+//void Entity::WriteComponents(RakNet::BitStream* outBitStream, eReplicaPacketType packetType) {
+//
+//	/**
+//	 * This has to be done in a specific order.
+//	 */
+//
+//	bool destroyableSerialized = false;
+//	bool bIsInitialUpdate = false;
+//	if (packetType == PACKET_TYPE_CONSTRUCTION) bIsInitialUpdate = true;
+//	unsigned int flags = 0;
+//
+//	PossessableComponent* possessableComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_POSSESSABLE, possessableComponent)) {
+//		possessableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	ModuleAssemblyComponent* moduleAssemblyComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_MODULE_ASSEMBLY, moduleAssemblyComponent)) {
+//		moduleAssemblyComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	ControllablePhysicsComponent* controllablePhysicsComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_CONTROLLABLE_PHYSICS, controllablePhysicsComponent)) {
+//		controllablePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	SimplePhysicsComponent* simplePhysicsComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SIMPLE_PHYSICS, simplePhysicsComponent)) {
+//		simplePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	RigidbodyPhantomPhysicsComponent* rigidbodyPhantomPhysics;
+//	if (TryGetComponent(COMPONENT_TYPE_RIGID_BODY_PHANTOM_PHYSICS, rigidbodyPhantomPhysics)) {
+//		rigidbodyPhantomPhysics->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	VehiclePhysicsComponent* vehiclePhysicsComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_VEHICLE_PHYSICS, vehiclePhysicsComponent)) {
+//		vehiclePhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	PhantomPhysicsComponent* phantomPhysicsComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_PHANTOM_PHYSICS, phantomPhysicsComponent)) {
+//		phantomPhysicsComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	SoundTriggerComponent* soundTriggerComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SOUND_TRIGGER, soundTriggerComponent)) {
+//		soundTriggerComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	BuffComponent* buffComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_BUFF, buffComponent)) {
+//		buffComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//
+//		DestroyableComponent* destroyableComponent;
+//		if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent)) {
+//			destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//		}
+//		destroyableSerialized = true;
+//	}
+//
+//	if (HasComponent(COMPONENT_TYPE_COLLECTIBLE)) {
+//		DestroyableComponent* destroyableComponent;
+//		if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent) && !destroyableSerialized) {
+//			destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//		}
+//		destroyableSerialized = true;
+//		outBitStream->Write(m_CollectibleID); // Collectable component
+//	}
+//
+//	PetComponent* petComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_PET, petComponent)) {
+//		petComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	CharacterComponent* characterComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_CHARACTER, characterComponent)) {
+//		characterComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	if (HasComponent(COMPONENT_TYPE_ITEM)) {
+//		outBitStream->Write0();
+//	}
+//
+//	InventoryComponent* inventoryComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_INVENTORY, inventoryComponent)) {
+//		inventoryComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	ScriptComponent* scriptComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SCRIPT, scriptComponent)) {
+//		scriptComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	SkillComponent* skillComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SKILL, skillComponent)) {
+//		skillComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	BaseCombatAIComponent* baseCombatAiComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_BASE_COMBAT_AI, baseCombatAiComponent)) {
+//		baseCombatAiComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	RebuildComponent* rebuildComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_REBUILD, rebuildComponent)) {
+//		DestroyableComponent* destroyableComponent;
+//		if (TryGetComponent(COMPONENT_TYPE_DESTROYABLE, destroyableComponent) && !destroyableSerialized) {
+//			destroyableComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//		}
+//		destroyableSerialized = true;
+//		rebuildComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	MovingPlatformComponent* movingPlatformComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_MOVING_PLATFORM, movingPlatformComponent)) {
+//		movingPlatformComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	SwitchComponent* switchComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SWITCH, switchComponent)) {
+//		switchComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	VendorComponent* vendorComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_VENDOR, vendorComponent)) {
+//		vendorComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	BouncerComponent* bouncerComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_BOUNCER, bouncerComponent)) {
+//		bouncerComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	ScriptedActivityComponent* scriptedActivityComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SCRIPTED_ACTIVITY, scriptedActivityComponent)) {
+//		scriptedActivityComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	ShootingGalleryComponent* shootingGalleryComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_SHOOTING_GALLERY, shootingGalleryComponent)) {
+//		shootingGalleryComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	RacingControlComponent* racingControlComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_RACING_CONTROL, racingControlComponent)) {
+//		racingControlComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	LUPExhibitComponent* lupExhibitComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_EXHIBIT, lupExhibitComponent)) {
+//		lupExhibitComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	ModelComponent* modelComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_MODEL, modelComponent)) {
+//		modelComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	RenderComponent* renderComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_RENDER, renderComponent)) {
+//		renderComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	if (HasComponent(COMPONENT_TYPE_ZONE_CONTROL)) {
+//		outBitStream->Write<uint32_t>(0x40000000);
+//	}
+//
+//	PossessorComponent* possessorComponent;
+//	if (TryGetComponent(COMPONENT_TYPE_POSSESSOR, possessorComponent)) {
+//		possessorComponent->Serialize(outBitStream, bIsInitialUpdate, flags);
+//	}
+//
+//	/*
+//	if (m_Trigger != nullptr)
+//	{
+//		outBitStream->Write1();
+//		outBitStream->Write(m_Trigger->id);
+//	}
+//	*/
+//}
 
 void Entity::ResetFlags() {
 	// Unused

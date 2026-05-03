@@ -23,38 +23,35 @@ SimplePhysicsComponent::~SimplePhysicsComponent() {
 }
 
 void SimplePhysicsComponent::Serialize(RakNet::BitStream* outBitStream, bool bIsInitialUpdate, unsigned int& flags) {
-	if (bIsInitialUpdate) {
-		outBitStream->Write0(); // climbable
-		outBitStream->Write<int32_t>(0); // climbableType
-	}
-
-	// Physics motion state
-	if (m_PhysicsMotionState != 0) {
-		outBitStream->Write1();
-		outBitStream->Write<uint32_t>(m_PhysicsMotionState);
-	} else {
-		outBitStream->Write0();
-	}
-
-	outBitStream->Write(m_IsDirty || bIsInitialUpdate);
-	if (m_IsDirty || bIsInitialUpdate) {
-		outBitStream->Write(m_Position.x);
-		outBitStream->Write(m_Position.y);
-		outBitStream->Write(m_Position.z);
-		outBitStream->Write(m_Rotation.x);
-		outBitStream->Write(m_Rotation.y);
-		outBitStream->Write(m_Rotation.z);
-		outBitStream->Write(m_Rotation.w);
-
-		m_IsDirty = false;
-	}
-
-	outBitStream->Write(m_DirtyVelocity || bIsInitialUpdate);
+    if (bIsInitialUpdate) {
+        outBitStream->Write0();          // climbable
+        outBitStream->Write<int32_t>(0); // climbableType
+    }
+    // Physics motion state
+    if (m_PhysicsMotionState != 0) {
+        outBitStream->Write1();
+        outBitStream->Write<uint32_t>(m_PhysicsMotionState);
+    } else {
+        outBitStream->Write0();
+    }
+    // Section 3: Velocity + Angular velocity (BEFORE position in alpha!)
+    outBitStream->Write(m_DirtyVelocity || bIsInitialUpdate);
     if (m_DirtyVelocity || bIsInitialUpdate) {
         outBitStream->Write(m_Velocity);
         outBitStream->Write(m_AngularVelocity);
-
         m_DirtyVelocity = false;
+    }
+    // Section 4: Position + Rotation (AFTER velocity in alpha!)
+    outBitStream->Write(m_IsDirty || bIsInitialUpdate);
+    if (m_IsDirty || bIsInitialUpdate) {
+        outBitStream->Write(m_Position.x);
+        outBitStream->Write(m_Position.y);
+        outBitStream->Write(m_Position.z);
+        outBitStream->Write(m_Rotation.x);
+        outBitStream->Write(m_Rotation.y);
+        outBitStream->Write(m_Rotation.z);
+        outBitStream->Write(m_Rotation.w);
+        m_IsDirty = false;
     }
 }
 

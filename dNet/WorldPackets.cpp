@@ -102,10 +102,11 @@ void WorldPackets::SendCharacterRenameResponse ( const SystemAddress& sysAddr, e
 }
 
 void WorldPackets::SendCharacterDeleteResponse(const SystemAddress& sysAddr, bool response) {
-    RakNet::BitStream bitStream;
-    PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_DELETE_CHARACTER_RESPONSE);
+    //TODO: verify: this packet doesn't appear to exist inside of Alpha??
+    /*RakNet::BitStream bitStream;
+    PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_CHARACTER);
     bitStream.Write(static_cast<uint8_t>(response));
-    SEND_PACKET
+    SEND_PACKET*/
 }
 
 void WorldPackets::SendTransferToWorld ( const SystemAddress& sysAddr, const std::string& serverIP, uint32_t serverPort, bool mythranShift ) {
@@ -120,10 +121,11 @@ void WorldPackets::SendTransferToWorld ( const SystemAddress& sysAddr, const std
 }
 
 void WorldPackets::SendServerState ( const SystemAddress& sysAddr ) {
-	RakNet::BitStream bitStream;
-	PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_SERVER_STATES);
-	bitStream.Write(static_cast<uint8_t>(1)); //If the server is receiving this request, it probably is ready anyway.
-	SEND_PACKET
+    //TODO: verify: not present in alpha??
+	//RakNet::BitStream bitStream;
+	//PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_STATE);
+	//bitStream.Write(static_cast<uint8_t>(1)); //If the server is receiving this request, it probably is ready anyway.
+	//SEND_PACKET
 }
 
 void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOBJID& objectID, const std::string& xmlData, const std::u16string& username, int32_t gm) {
@@ -131,7 +133,7 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_CREATE_CHARACTER);
     
     RakNet::BitStream data;
-    data.Write<uint32_t>(7); //LDF key count
+    data.Write<uint32_t>(10); //LDF key count
 
     LDFData<LWOOBJID>* objid = new LDFData<LWOOBJID>(u"objid", objectID);
     LDFData<LOT>* lot = new LDFData<LOT>(u"template", 1);
@@ -141,6 +143,10 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     //LDFData<int32_t>* chatmode = new LDFData<int32_t>(u"chatmode", gm);
     LDFData<bool>* editor_enabled = new LDFData<bool>(u"editor_enabled", true);
     LDFData<int32_t>* editor_level = new LDFData<int32_t>(u"editor_level", 9);
+
+    LDFData<float>* posX = new LDFData<float>(u"position.x", -629.0f);
+    LDFData<float>* posY = new LDFData<float>(u"position.y", 613.4f);
+    LDFData<float>* posZ = new LDFData<float>(u"position.z", -30.0f);
     
     objid->WriteToPacket(&data);
     lot->WriteToPacket(&data);
@@ -149,6 +155,10 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     //chatmode->WriteToPacket(&data);
     editor_enabled->WriteToPacket(&data);
     editor_level->WriteToPacket(&data);
+    posX->WriteToPacket(&data);
+    posY->WriteToPacket(&data);
+    posZ->WriteToPacket(&data);
+
     xmlConfigData->WriteToPacket(&data);
     
     delete objid;
@@ -159,6 +169,10 @@ void WorldPackets::SendCreateCharacter(const SystemAddress& sysAddr, const LWOOB
     delete name;
     delete editor_level;
     delete editor_enabled;
+
+    delete posX;
+    delete posY;
+    delete posZ;
     
 #ifdef _WIN32
     bitStream.Write<uint32_t>(data.GetNumberOfBytesUsed() + 1);

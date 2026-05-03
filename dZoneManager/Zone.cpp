@@ -21,6 +21,9 @@ Zone::Zone(const LWOMAPID & mapID, const LWOINSTANCEID & instanceID, const LWOCL
 	m_CheckSum = 0;
 	m_WorldID = 0;
 	m_SceneCount = 0;
+
+	//I love hardcoding!!!!!!
+        m_Spawnpoint = NiPoint3(-626.584f, 613.3515f, -28.6374f); // lzx="-626.5847" lzy="613.3515" lzz="-28.6374"
 }
 
 Zone::~Zone() {
@@ -89,6 +92,8 @@ void Zone::LoadZoneIntoMemory() {
 				LoadSceneTransition(file);
 			}
 		}
+
+		//return; // Disable paths for now
 
 		if (m_ZoneFileFormatVersion >= Zone::ZoneFileFormatVersion::EarlyAlpha) {
 			BinaryIO::BinaryRead(file, m_PathDataLength);
@@ -179,6 +184,9 @@ std::string Zone::GetFilePathForZoneID() {
 }
 
 uint32_t Zone::CalculateChecksum() {
+    if (m_Scenes.size() == 0)
+		return 42069; //tbh, LU alpha also just doesn't give a shit so why bother
+
 	//alpha seems to use the global scene's revision number
 	return m_Scenes.at(0).level->m_ChunkHeaders.begin()->second.fileInfo->revision;
 }

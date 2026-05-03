@@ -100,7 +100,7 @@ void ChatPacketHandler::HandleFriendRequest(Packet* packet) {
 	std::string playerName = PacketUtils::ReadString(0x14, packet, true);
 	//There's another bool here to determine if it's a best friend request, but we're not handling it right now.
 
-	//PacketUtils::SavePacket("FriendRequest.bin", (char*)inStream.GetData(), inStream.GetNumberOfBytesUsed());
+	PacketUtils::SavePacket("FriendRequest.bin", (char*)inStream.GetData(), inStream.GetNumberOfBytesUsed());
 
 	//We need to check to see if the player is actually online or not:
 	auto targetData = playerContainer.GetPlayerData(playerName);
@@ -791,26 +791,29 @@ void ChatPacketHandler::SendFriendUpdate(PlayerData* friendData, PlayerData* pla
 }
 
 void ChatPacketHandler::SendFriendRequest(PlayerData* receiver, PlayerData* sender, bool isBFFReq) {
-	if (!receiver || !sender) return;
+    return; //TODO: verify: doesn't seem to exist in alpha.
 
-	//Make sure people aren't requesting people that they're already friends with:
-	for (auto fr : receiver->friends) {
-		if (fr.friendID == sender->playerID) {
-			return; //we have this player as a friend, yeet this function so it doesn't send another request.
-		}
-	}
 
-	CBITSTREAM;
-	PacketUtils::WriteHeader(bitStream, CHAT_INTERNAL, MSG_CHAT_INTERNAL_ROUTE_TO_PLAYER);
-	bitStream.Write(receiver->playerID);
+	//if (!receiver || !sender) return;
 
-	//portion that will get routed:
-	PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_ADD_FRIEND_REQUEST);
-	PacketUtils::WritePacketWString(sender->playerName.C_String(), 33, &bitStream);
-	bitStream.Write<uint8_t>(0);
+	////Make sure people aren't requesting people that they're already friends with:
+	//for (auto fr : receiver->friends) {
+	//	if (fr.friendID == sender->playerID) {
+	//		return; //we have this player as a friend, yeet this function so it doesn't send another request.
+	//	}
+	//}
 
-	SystemAddress sysAddr = receiver->sysAddr;
-	SEND_PACKET;
+	//CBITSTREAM;
+	//PacketUtils::WriteHeader(bitStream, CHAT_INTERNAL, MSG_CHAT_INTERNAL_ROUTE_TO_PLAYER);
+	//bitStream.Write(receiver->playerID);
+
+	////portion that will get routed:
+	//PacketUtils::WriteHeader(bitStream, CLIENT, MSG_CLIENT_ADD_FRIEND_REQUEST);
+	//PacketUtils::WritePacketWString(sender->playerName.C_String(), 33, &bitStream);
+	//bitStream.Write<uint8_t>(0);
+
+	//SystemAddress sysAddr = receiver->sysAddr;
+	//SEND_PACKET;
 }
 
 void ChatPacketHandler::SendFriendResponse(PlayerData* receiver, PlayerData* sender, uint8_t responseCode) {

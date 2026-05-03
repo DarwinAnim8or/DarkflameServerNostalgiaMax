@@ -90,36 +90,37 @@ void GameMessages::SendFireEventClientSide(const LWOOBJID& objectID, const Syste
 }
 
 void GameMessages::SendTeleport(const LWOOBJID& objectID, const NiPoint3& pos, const NiQuaternion& rot, const SystemAddress& sysAddr, bool bSetRotation, bool noGravTeleport) {
-	CBITSTREAM
-	CMSGHEADER
-	bitStream.Write(objectID);
-	bitStream.Write(GAME_MSG::GAME_MSG_TELEPORT);
+    CBITSTREAM
+    CMSGHEADER
 
-	bool bIgnoreY = (pos.y == 0.0f);
-	bool bUseNavmesh = false;
-	bool bSkipAllChecks = false;
-	//float w = 1.0f;
-	//float x = 0.0f;
-	//float y = 0.0f;
-	//float z = 0.0f;
+    // Build the message data first so we know its length
+    RakNet::BitStream msgData;
+    bool bIgnoreY = (pos.y == 0.0f);
+    bool bUseNavmesh = false;
+    bool bSkipAllChecks = false;
+    msgData.Write(bIgnoreY);
+    msgData.Write(bSetRotation);
+    msgData.Write(bSkipAllChecks);
+    msgData.Write(pos.x);
+    msgData.Write(pos.y);
+    msgData.Write(pos.z);
+    msgData.Write(bUseNavmesh);
+    msgData.Write(noGravTeleport);
+    msgData.Write(rot.w != 1.0f);
+    if (rot.w != 1.0f)
+        msgData.Write(rot.w);
+    msgData.Write(rot.x);
+    msgData.Write(rot.y);
+    msgData.Write(rot.z);
 
-	bitStream.Write(bIgnoreY);
-	bitStream.Write(bSetRotation);
-	bitStream.Write(bSkipAllChecks);
-	bitStream.Write(pos.x);
-	bitStream.Write(pos.y);
-	bitStream.Write(pos.z);
-	bitStream.Write(bUseNavmesh);
-	bitStream.Write(noGravTeleport);
+    // messageLength = objectID(8) + msgID(2) + data bytes
+    uint32_t messageLength = 8 + 2 + msgData.GetNumberOfBytesUsed();
+    bitStream.Write(messageLength);
+    bitStream.Write(objectID);
+    bitStream.Write(GAME_MSG::GAME_MSG_TELEPORT);
+    bitStream.Write(msgData);
 
-	bitStream.Write(rot.w != 1.0f);
-	if (rot.w != 1.0f) bitStream.Write(rot.w);
-
-	bitStream.Write(rot.x);
-	bitStream.Write(rot.y);
-	bitStream.Write(rot.z);
-
-	SEND_PACKET
+    SEND_PACKET
 }
 
 void GameMessages::SendPlayAnimation(Entity* entity, const std::u16string& animationName, float fPriority, float fScale) {
@@ -246,7 +247,7 @@ void GameMessages::SendStartArrangingWithItem(
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG::GAME_MSG_START_ARRANGING_WITH_ITEM);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(bFirstTime);
 	bitStream.Write(buildAreaID != LWOOBJID_EMPTY);
@@ -270,7 +271,7 @@ void GameMessages::SendPlayerSetCameraCyclingMode(const LWOOBJID& objectID, cons
 	CMSGHEADER
 
 	bitStream.Write(objectID);
-	bitStream.Write(GAME_MSG_PLAYER_SET_CAMERA_CYCLING_MODE);
+        bitStream.Write(END);
 
 	bitStream.Write(bAllowCyclingWhileDeadOnly);
 
@@ -380,7 +381,7 @@ void GameMessages::SendRestoreToPostLoadStats(Entity* entity, const SystemAddres
 	CBITSTREAM
 	CMSGHEADER
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG::GAME_MSG_RESTORE_TO_POST_LOAD_STATS);
+	bitStream.Write(GAME_MSG::GAME_MSG_POST_LOAD_EQUIP);
 	SEND_PACKET
 }
 
@@ -388,7 +389,7 @@ void GameMessages::SendServerDoneLoadingAllObjects(Entity* entity, const SystemA
 	CBITSTREAM
 	CMSGHEADER
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG::GAME_MSG_SERVER_DONE_LOADING_ALL_OBJECTS);
+	//bitStream.Write(GAME_MSG::GAME_MSG_SERVER_READY);
 	SEND_PACKET
 }
 
@@ -563,7 +564,7 @@ void GameMessages::SendModifyLEGOScore(Entity* entity, const SystemAddress& sysA
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write((uint16_t)GAME_MSG_MODIFY_LEGO_SCORE);
+	//bitStream.Write((uint16_t)GAME_MSG_SET_LEGO);
 	bitStream.Write(score);
 
 	bitStream.Write(sourceType != LOOT_SOURCE_NONE);
@@ -684,7 +685,7 @@ void GameMessages::SendBroadcastTextToChatbox(Entity* entity, const SystemAddres
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write((uint16_t)GAME_MSG::GAME_MSG_BROADCAST_TEXT_TO_CHATBOX);
+	//bitStream.Write((uint16_t)GAME_MSG::GAME_MSG_BROADCAST_TEXT_TO_CHATBOX);
 
 	LWONameValue attribs;
 	attribs.name = attrs;
@@ -946,7 +947,7 @@ void GameMessages::SendStop2DAmbientSound(Entity* entity, bool force, std::strin
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write((uint16_t)GAME_MSG_PLAY2_DAMBIENT_SOUND);
+	//bitStream.Write((uint16_t)GAME_MSG_PLAY2_DAMBIENT_SOUND);
 
 	uint32_t audioGUIDSize = audioGUID.size();
 
@@ -970,7 +971,7 @@ void GameMessages::SendPlay2DAmbientSound(Entity* entity, std::string audioGUID,
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write((uint16_t)GAME_MSG_PLAY2_DAMBIENT_SOUND);
+	//bitStream.Write((uint16_t)GAME_MSG_PLAY2_DAMBIENT_SOUND);
 
 	uint32_t audioGUIDSize = audioGUID.size();
 
@@ -989,7 +990,7 @@ void GameMessages::SendSetNetworkScriptVar(Entity* entity, const SystemAddress& 
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write((uint16_t)GAME_MSG_SET_NETWORK_SCRIPT_VAR);
+	//bitStream.Write((uint16_t)GAME_MSG_SET_NETWORK_SCRIPT_VAR);
 
 	const auto u16Data = GeneralUtils::ASCIIToUTF16(data);
 	uint32_t dataSize = static_cast<uint32_t>(u16Data.size());
@@ -1046,7 +1047,7 @@ void GameMessages::SendDropClientLoot(Entity* entity, const LWOOBJID& sourceID, 
 	CMSGHEADER;
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(uint16_t(GAME_MSG_DROP_CLIENT_LOOT));
+	bitStream.Write(uint16_t(GAME_MSG_DROP_LOOT));
 
 	bitStream.Write(bUsePosition);
 
@@ -1211,7 +1212,7 @@ void GameMessages::SendFinishArrangingWithItem(Entity* entity, const LWOOBJID& b
 
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG::GAME_MSG_FINISH_ARRANGING_WITH_ITEM);
+	//bitStream.Write(GAME_MSG::GAME_MSG_FINISH_ARRANGING_WITH_ITEM);
 
 	bitStream.Write(buildAreaID != LWOOBJID_EMPTY);
 	if (buildAreaID != LWOOBJID_EMPTY) bitStream.Write(buildAreaID);
@@ -1342,7 +1343,7 @@ void GameMessages::SendConsumeClientItem(Entity* entity, bool bSuccess, LWOOBJID
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG_CONSUME_CLIENT_ITEM);
+	bitStream.Write(GAME_MSG_CONSUME_ITEM);
 	bitStream.Write(bSuccess);
 	bitStream.Write(item);
 
@@ -1355,7 +1356,7 @@ void GameMessages::SendUseItemResult(Entity* entity, LOT templateID, bool useIte
 	CMSGHEADER
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG_USE_ITEM_RESULT);
+	//bitStream.Write(GAME_MSG_ITEMUSE);
 	bitStream.Write(templateID);
 	bitStream.Write(useItemResult);
 
@@ -1521,7 +1522,7 @@ void GameMessages::NotifyLevelRewards(LWOOBJID objectID, const SystemAddress& sy
 	CMSGHEADER
 
 	bitStream.Write(objectID);
-	bitStream.Write((uint16_t)GAME_MSG::GAME_MSG_NOTIFY_LEVEL_REWARDS);
+	bitStream.Write((uint16_t)GAME_MSG::END);
 
 	bitStream.Write(level);
 	bitStream.Write(sending_rewards);
@@ -1690,7 +1691,7 @@ void GameMessages::SendStartCelebrationEffect(Entity* entity, const SystemAddres
 	CMSGHEADER;
 
 	bitStream.Write(entity->GetObjectID());
-	bitStream.Write(GAME_MSG::GAME_MSG_START_CELEBRATION_EFFECT);
+	bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write<uint32_t>(0); //animation
 	bitStream.Write0(); //No custom bg obj
@@ -1721,7 +1722,7 @@ void GameMessages::SendSetRailMovement(const LWOOBJID& objectID, bool pathGoForw
     CMSGHEADER;
 
     bitStream.Write(objectID);
-    bitStream.Write(GAME_MSG::GAME_MSG_SET_RAIL_MOVEMENT);
+    bitStream.Write(GAME_MSG::END);
 
     bitStream.Write(pathGoForward);
 
@@ -1755,7 +1756,7 @@ void GameMessages::SendStartRailMovement(const LWOOBJID &objectID, std::u16strin
     CMSGHEADER;
 
     bitStream.Write(objectID);
-    bitStream.Write(GAME_MSG::GAME_MSG_START_RAIL_MOVEMENT);
+    bitStream.Write(GAME_MSG::END);
 
     bitStream.Write(damageImmune);
     bitStream.Write(noAggro);
@@ -1919,7 +1920,7 @@ void GameMessages::SendBBBSaveResponse(const LWOOBJID& objectId, const LWOOBJID&
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write<uint16_t>(GAME_MSG::GAME_MSG_BBB_SAVE_RESPONSE);
+        bitStream.Write<uint16_t>(GAME_MSG::END);
 
 	bitStream.Write(localID);
 
@@ -2019,7 +2020,7 @@ void GameMessages::SendSetBuildModeConfirmed(LWOOBJID objectId, const SystemAddr
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_SET_BUILD_MODE_CONFIRMED);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(start);
 	bitStream.Write(warnVisitors);
@@ -2062,7 +2063,7 @@ void GameMessages::SendZonePropertyModelEquipped(LWOOBJID objectId, LWOOBJID pla
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_ZONE_PROPERTY_MODEL_EQUIPPED);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(playerId);
 	bitStream.Write(propertyId);
@@ -2928,7 +2929,7 @@ void GameMessages::SendAddRunSpeedModifier(LWOOBJID objectId, LWOOBJID caster, u
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_ADD_RUN_SPEED_MODIFIER);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(caster != LWOOBJID_EMPTY);
 	if (caster != LWOOBJID_EMPTY) bitStream.Write(caster);
@@ -2946,7 +2947,7 @@ void GameMessages::SendRemoveRunSpeedModifier(LWOOBJID objectId, uint32_t modifi
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_REMOVE_RUN_SPEED_MODIFIER);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(modifier != 500);
 	if (modifier != 500) bitStream.Write(modifier);
@@ -2961,7 +2962,7 @@ void GameMessages::SendPropertyEntranceBegin(LWOOBJID objectId, const SystemAddr
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_PROPERTY_ENTRANCE_BEGIN);
+        bitStream.Write(GAME_MSG::END);
 
 	if (sysAddr == UNASSIGNED_SYSTEM_ADDRESS) SEND_PACKET_BROADCAST;
 	SEND_PACKET;
@@ -3042,7 +3043,7 @@ void GameMessages::SendTeamPickupItem(LWOOBJID objectId, LWOOBJID lootID, LWOOBJ
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_TEAM_PICKUP_ITEM);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(lootID);
 	bitStream.Write(lootOwnerID);
@@ -3379,7 +3380,7 @@ void GameMessages::SendNotifyPetTamingPuzzleSelected(LWOOBJID objectId, std::vec
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_NOTIFY_PET_TAMING_PUZZLE_SELECTED);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(static_cast<uint32_t>(bricks.size()));
 	for (const auto& brick : bricks)
@@ -3398,7 +3399,7 @@ void GameMessages::SendPetTamingTryBuildResult(LWOOBJID objectId, bool bSuccess,
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_PET_TAMING_TRY_BUILD_RESULT);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(bSuccess);
 	bitStream.Write(iNumCorrect != 0);
@@ -3467,7 +3468,7 @@ void GameMessages::SendRegisterPetDBID(LWOOBJID objectId, LWOOBJID petDBID, cons
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_REGISTER_PET_DBID);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(petDBID);
 
@@ -3481,7 +3482,7 @@ void GameMessages::SendMarkInventoryItemAsActive(LWOOBJID objectId, bool bActive
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_MARK_INVENTORY_ITEM_AS_ACTIVE);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(bActive);
 	
@@ -3583,7 +3584,7 @@ void GameMessages::SendSetPetNameModerated(LWOOBJID objectId, LWOOBJID petDBID, 
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_SET_PET_NAME_MODERATED);
+        bitStream.Write(GAME_MSG::END);
 	
 	bitStream.Write(petDBID != LWOOBJID_EMPTY);
 	if (petDBID != LWOOBJID_EMPTY) bitStream.Write(petDBID);
@@ -3905,7 +3906,7 @@ void GameMessages::SendNotifyNotEnoughInvSpace(LWOOBJID objectId, uint32_t freeS
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_VEHICLE_NOTIFY_FINISHED_RACE);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(freeSlotsNeeded);
 	bitStream.Write(inventoryType != 0);
@@ -4223,7 +4224,7 @@ void GameMessages::SendRacingPlayerLoaded(LWOOBJID objectId, LWOOBJID playerID, 
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_RACING_PLAYER_LOADED);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(playerID);
 	bitStream.Write(vehicleID);
@@ -4304,7 +4305,7 @@ void GameMessages::SendNotifyRacingClient(LWOOBJID objectId, int32_t eventType, 
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_NOTIFY_RACING_CLIENT);
+        bitStream.Write(GAME_MSG::END);
 
 	bitStream.Write(eventType != 0);
 	if (eventType != 0) bitStream.Write(eventType);
@@ -4387,7 +4388,7 @@ void GameMessages::SendVehicleAddPassiveBoostAction(LWOOBJID objectId, const Sys
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_VEHICLE_ADD_PASSIVE_BOOST_ACTION);
+        bitStream.Write(GAME_MSG::END);
 
 	if (sysAddr == UNASSIGNED_SYSTEM_ADDRESS) SEND_PACKET_BROADCAST;
 	SEND_PACKET;
@@ -4400,7 +4401,7 @@ void GameMessages::SendVehicleRemovePassiveBoostAction(LWOOBJID objectId, const 
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_VEHICLE_REMOVE_PASSIVE_BOOST_ACTION);
+        bitStream.Write(GAME_MSG::END);
 
 	if (sysAddr == UNASSIGNED_SYSTEM_ADDRESS) SEND_PACKET_BROADCAST;
 	SEND_PACKET;
@@ -4413,7 +4414,7 @@ void GameMessages::SendVehicleNotifyFinishedRace(LWOOBJID objectId, const System
 	CMSGHEADER;
 
 	bitStream.Write(objectId);
-	bitStream.Write(GAME_MSG::GAME_MSG_VEHICLE_NOTIFY_FINISHED_RACE);
+        bitStream.Write(GAME_MSG::END);
 
 	if (sysAddr == UNASSIGNED_SYSTEM_ADDRESS) SEND_PACKET_BROADCAST;
 	SEND_PACKET;
@@ -4427,7 +4428,7 @@ void GameMessages::SendAddBuff(LWOOBJID& objectID, const LWOOBJID& casterID, uin
 	CMSGHEADER;
 
 	bitStream.Write(objectID);
-	bitStream.Write(GAME_MSG::GAME_MSG_ADD_BUFF);
+	bitStream.Write(GAME_MSG::GAME_MSG_ADD_STATUS_EFFECT); //guess
 
 	bitStream.Write(false); // Added by teammate
 	bitStream.Write(false); // Apply on teammates
@@ -4764,6 +4765,8 @@ void GameMessages::HandleParseChatMessage(RakNet::BitStream* inStream, Entity* e
 		inStream->Read(character);
 		wsString.push_back(character);
 	}
+
+	Game::logger->Log("HandleParseChatMessage", GeneralUtils::UTF16ToWTF8(wsString));
 
 	if (wsString[0] == L'/') {
 		SlashCommandHandler::HandleChatCommand(wsString, entity, sysAddr);
